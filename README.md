@@ -1,3 +1,6 @@
+#### code is a bit of a mess right now - bunch of different experiments jammed together.  clean up time!
+
+
 This project is an ongoing sandbox to learn data visualization techniques. Primarily using python libraries **`plotly`** and **`dash`**.
 
 All the data here is generated from personal Strava run data.  Recorded data starts late 2015.    
