@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import Assets.file_paths as fps
-from Pages.overview import sidebar
+from Pages.sidebar import sidebar
 
 
 # lake_sonoma =  r'./topos/topo_lake_sonoma_35m.csv'
@@ -90,6 +90,12 @@ fig.add_trace(go.Scatter3d(x=df_run['longitude'],
 
 
 def draw_photos():
+    '''
+
+    :return:
+    :rtype:
+    '''
+
     # TODO: move this to markdown file.  Could store in pages folder and access by dictionary?
     markdown_text = '''
     **This page is under development**  - will add ability to select all runs in Lake Sonoma area. Using this 100K run as a placeholder.

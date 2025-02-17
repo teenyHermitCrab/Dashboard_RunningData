@@ -8,7 +8,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import warnings
 import Assets.file_paths as fps
-from Pages.overview import sidebar
+from Pages.sidebar import sidebar
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
@@ -145,6 +145,15 @@ def draw_correlation_heatmap():
               Input("range_select_years", 'value'),
               Input('rbtn_data_selection', 'value'))
 def update_data_range_plots(range_selections, rbtn_selection):
+    '''
+
+    :param range_selections:
+    :type range_selections:
+    :param rbtn_selection:
+    :type rbtn_selection:
+    :return:
+    :rtype:
+    '''
     start_year,stop_year = range_selections[0], range_selections[1]
     # selected_year = range_selection
     df_selected_years = df_all_names_scrubbed.loc[(df_all_names_scrubbed['year'] >= start_year) & (df_all_names_scrubbed['year'] <= stop_year)]

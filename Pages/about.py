@@ -2,7 +2,7 @@ from dash import html, dcc, callback, Input, Output, State
 import dash_bootstrap_components as dbc
 import base64
 import Assets.file_paths as fps
-from Pages.overview import sidebar
+from Pages.sidebar import sidebar
 
 with open(fps.page_about_markdown_path, 'r') as f:
     markdown_text = f.read()

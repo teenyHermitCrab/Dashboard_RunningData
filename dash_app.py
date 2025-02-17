@@ -43,9 +43,9 @@ dash.register_page('Pages.about',
 
 # with app.app_context():
 #     dash_app.layout = dash.page_container
-#app.layout = dash.page_container
+app.layout = dash.page_container
 
 
 
 if __name__ == "__main__":
-    app.run_server(debug=False)
+    app.run_server(debug=True)

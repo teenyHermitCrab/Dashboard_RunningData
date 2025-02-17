@@ -4,10 +4,13 @@ from dash import dcc, html, callback, Input, Output, State
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
+import dash_loading_spinners
 import json
 import pandas as pd
 import plotly.express as px
 from pprint import pprint as pp
+from Pages.sidebar import sidebar
+
 
 import Assets.file_paths as fps
 
@@ -39,35 +42,6 @@ with open(fps.page_overview_geojson_fips_path, 'r') as f:
 
 
 fips_to_name =pd.read_pickle(fps.page_overview_fips_to_name_df_pickle_path)
-
-
-def sidebar(active_item=None):
-    nav = html.Nav(id="sidebar", className="active", children=[
-                    html.Div(className="custom-menu", children=[
-                        html.Button([
-                            html.I(className="fa fa-bars"),
-                            html.Span("Toggle Menu", className="sr-only")
-                        ], type="button",
-                           id="sidebarCollapse",
-                           className="btn btn-primary")
-                    ]),
-                    html.Div(className="flex-column p-4 nav nav-pills", children=[
-                        html.A([
-                            html.I(className="fa-solid fa-earth-americas fa-4x mx-2",),
-                            #html.Img(src='https://webstatic.everburstsun.net/dash-molstar-example/nav.png', alt='', width=48, height=48, className='mx-2'),
-                            html.Span(" Run Data", className='fs-4'),
-                        ], className='d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none', href='/'),
-                        html.Br(),
-                        html.P('Data visualization experiments using personal Strava data', ),
-                        html.Hr(),
-                        dbc.NavItem(dbc.NavLink("Overview", href="/", className='text-white', active=True if active_item=='Pages.overview' else False)),
-                        dbc.NavItem(dbc.NavLink("Statistics", href="/statistics_1", className='text-white', active=True if active_item=='Pages.statistics_1' else False)),
-                        # dbc.NavItem(dbc.NavLink("Statistics 2", href="/statistics_2", className='text-white', active=True if active_item == 'Pages.statistics_2' else False)),
-                        dbc.NavItem(dbc.NavLink("Lake Sonoma", href="/lake_sonoma", className='text-white', active=True if active_item=='Pages.lake_sonoma' else False)),
-                        dbc.NavItem(dbc.NavLink("About", href="/about", className='text-white', active=True if active_item=='Pages.about' else False))
-                    ])
-    ])
-    return nav
 
 
 #region modal plot help
@@ -182,6 +156,7 @@ def draw_scatter_all_runs():
                                                             hover_data={'start_date':False},
                                                             render_mode='auto',
                                                             title='all run activities'
+
                                                             )#.update_layout(title_x=0.5, autosize=True),
                                                             .update_layout(
                                                                 # title='all runs',
@@ -443,8 +418,8 @@ def describe_selected_runs(relay_out_data: dict, figure, selected_data):
     miles_gain, km_gain = meters_to_miles(total_gain_meters), total_gain_meters / 1000.0
     miles_dist, km_dist = meters_to_miles(total_distance_meters), total_distance_meters / 1000.0
     # ({km_dist:,.1f} km)   ({km_gain:,.1f} km)
-    distance_msg = f'- distance:&nbsp;&nbsp;&nbsp;**{miles_dist:,.1f}** miles  🔵 blue circle'
-    elevation_msg = f'- elevation:&nbsp&nbsp;**{miles_gain:,.1f}** miles  🟠 orange circle'
+    distance_msg = f'- total distance:&nbsp;&nbsp;&nbsp;**{miles_dist:,.1f}** miles  🔵 blue circle'
+    elevation_msg = f'- total elevation:&nbsp&nbsp;**{miles_gain:,.1f}** miles  🟠 orange circle'
     text = f'{selection_msg}\n{distance_msg}\n{elevation_msg}\n'
 
 
@@ -612,6 +587,16 @@ def show_modal_on_load(dont_show, store_data):
     return False, json.dumps(store_data)  # Don't show the modal if already marked
 
 
+#
+# @callback(Output('div_initial_loading', 'children'),
+#           Input('div_overview_content', 'loading_state'),
+#           State('div_initial_loading', 'children'),
+# )
+# def hide_initial_spinner_after_startup(loading_state, children):
+#     if children:
+#         return None
+#     raise PreventUpdate
+
 
 def layout():
     layout_components_scatter = dbc.Row([
@@ -630,12 +615,13 @@ def layout():
         ], className='mb-4 mt-2')  # align-items-end
 
     layout_about = [
+        # html.Div([dash_loading_spinners.Pacman(fullscreen=True, id='loading_whole_app')], id='div_initial_loading'),
         sidebar(__name__),
         html.Div([
             # layout_components_scatter
             dbc.Container(layout_components_scatter,  fluid=True,),
             dbc.Container(layout_components_maps, fluid='md')
-        ], className='content'),
+        ], id='div_overview_content', className='content'),
         # dcc.Store to keep track of whether the quick-start modal should be shown or not
         dcc.Store(id='store_quick_start', storage_type='session', data=json.dumps({'modal_shown': False})),
         dbc.Modal(
