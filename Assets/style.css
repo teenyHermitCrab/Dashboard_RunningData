@@ -1,6 +1,21 @@
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
+
+/*
+#plot_all_lake_sonoma_runs > div.js-plotly-plot > div > div > svg:nth-child(1) > g.draglayer.cursor-crosshair > g > rect.nsewdrag.drag.cursor-ew-resize
+*/
+
+.js-plotly-plot .plotly g.draglayer.cursor-crosshair rect.nsewdrag.drag.cursor-ew-resize {
+    cursor: crosshair;
+}
+.rect.nsewdrag.drag.cursor-ew-resize {
+    cursor: crosshair;
+}
+.js-plotly-plot .plotly .cursor-ew-resize {
+    cursor: crosshair;
+}
+
 .content {
   @media (min-width: 1150px) {
     /* on large screen, no need for sidebar hiding, so this margin-left provides space for sidebar
@@ -216,9 +231,11 @@ body {
 
 */
 
+
+
 ._dash-loading {
   margin: auto;
-  color: transparent;
+  color: black;
   width: 0;
   height: 0;
   text-align: center;

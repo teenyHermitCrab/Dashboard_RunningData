@@ -301,46 +301,6 @@ def draw_counties():
 def meters_to_miles(meters: float) -> float:
     return meters * 0.000621371
 
-# @callback(Output('txt_overall_runs_plot_selected', 'children'),
-#               Input('plot_all_runs', 'selectedData'))
-# def describe_selected_runs(selected_data: dict):
-#     if selected_data:
-#         points = selected_data['points']
-#         points_count = len(points)
-#         selection = list(selected_data.keys())
-#         selection.remove('points')
-#         #range_or_lasso = selection[0]
-#
-#         point_indicies = [point['pointIndex'] for point in points]
-#
-#         #elevations = df_all_names_scrubbed.iloc[point_indicies]['total_elevation_gain']
-#         # max_x = max(selected_data[range_or_lasso]['x'])
-#         # min_x = min(selected_data[range_or_lasso]['x'])
-#         # max_y = max(selected_data[range_or_lasso]['y'])
-#         # min_y = min(selected_data[range_or_lasso]['y'])
-#         # area = (max_x-min_x) *  (max_y-min_y)
-#         # if area == 0:
-#         #     return f'area selected is zero'
-#         # density = points_count/area
-#
-#         total_gain_meters = df_all_names_scrubbed.iloc[point_indicies]['total_elevation_gain'].sum()
-#         total_distance_meters = df_all_names_scrubbed.iloc[point_indicies]['distance'].sum()
-#         selection_msg = f'##### runs selected: **{points_count}**\n---\n'
-#     else:
-#         counts = df_all_names_scrubbed['county_geoid'].value_counts()
-#
-#         total_gain_meters = df_all_names_scrubbed['total_elevation_gain'].sum()
-#         total_distance_meters = df_all_names_scrubbed['distance'].sum()
-#         selection_msg = f'##### no runs selected  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- use entire history\n---'
-#
-#     miles_gain, km_gain = meters_to_miles(total_gain_meters), total_gain_meters / 1000.0
-#     miles_dist, km_dist = meters_to_miles(total_distance_meters), total_distance_meters / 1000.0
-#     # ({km_dist:,.1f} km)   ({km_gain:,.1f} km)
-#     distance_msg = f'- distance:&nbsp;&nbsp;&nbsp;**{miles_dist:,.1f}** miles  🔵 blue circle'
-#     elevation_msg = f'- elevation:&nbsp&nbsp;**{miles_gain:,.1f}** miles  🟠 orange circle'
-#     text = f'{selection_msg}\n{distance_msg}\n{elevation_msg}\n'
-#
-#     return  text
 
 
 @callback(Output('txt_overall_runs_plot_selected', 'children'),
@@ -587,15 +547,7 @@ def show_modal_on_load(dont_show, store_data):
     return False, json.dumps(store_data)  # Don't show the modal if already marked
 
 
-#
-# @callback(Output('div_initial_loading', 'children'),
-#           Input('div_overview_content', 'loading_state'),
-#           State('div_initial_loading', 'children'),
-# )
-# def hide_initial_spinner_after_startup(loading_state, children):
-#     if children:
-#         return None
-#     raise PreventUpdate
+
 
 
 def layout():

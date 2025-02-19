@@ -22,6 +22,7 @@ packaging==24.2
 pandas==2.2.3
 patsy==1.0.1
 plotly==6.0.0
+polyline~=2.0.2
 python-dateutil==2.9.0.post0
 pytz==2025.1
 requests==2.32.3
@@ -35,3 +36,4 @@ tzdata==2025.1
 urllib3==2.3.0
 Werkzeug==3.0.6
 zipp==3.21.0
+
