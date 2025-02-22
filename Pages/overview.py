@@ -9,16 +9,17 @@ import json
 import pandas as pd
 import plotly.express as px
 from pprint import pprint as pp
+import Assets.file_paths as fps
+from Pages.data import df_all_names_scrubbed
 from Pages.sidebar import sidebar
 
 
-import Assets.file_paths as fps
 
 
 
 
 ##### get my saved, processed data
-df_all_names_scrubbed = pd.read_pickle(fps.page_overview_all_runs_df_path)
+# df_all_names_scrubbed = pd.read_pickle(fps.page_overview_all_runs_df_path)
 
 # with urlopen('https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json') as response:
 #     counties = json.load(response)
@@ -105,16 +106,6 @@ modal_quick_start_guide = html.Div([
 
 #endregion
 
-
-@callback(Output('sidebar', 'className'),  #className
-    Input('sidebarCollapse', 'n_clicks'),
-    State('sidebar', 'className'))
-def toggle_sidebar(btn_click, className):
-    # print(f' toggle button: {btn_click}   {className =}')
-    if className == 'active':
-        return ''
-    if className == '':
-        return 'active'
 
 
 def draw_scatter_all_runs():
@@ -221,7 +212,7 @@ def draw_total_distance():
     return html.Div([
             dbc.Card(
                 dbc.CardBody([
-                    dcc.Markdown(id='txt_overall_runs_plot_selected', dangerously_allow_html=False),
+                    dcc.Markdown(id='markdown_overall_runs_plot_selected', dangerously_allow_html=False),
                     html.Br(),
                     html.Div([
                             dl.Map([
@@ -303,7 +294,7 @@ def meters_to_miles(meters: float) -> float:
 
 
 
-@callback(Output('txt_overall_runs_plot_selected', 'children'),
+@callback(Output('markdown_overall_runs_plot_selected', 'children'),
           Output('distance_radius', 'radius'),
           Output('elevation_radius', 'radius'),
           Output('store_county_counts', 'data'),
@@ -545,8 +536,6 @@ def show_modal_on_load(dont_show, store_data):
         return True, json.dumps(store_data)  # Open the modal
 
     return False, json.dumps(store_data)  # Don't show the modal if already marked
-
-
 
 
 

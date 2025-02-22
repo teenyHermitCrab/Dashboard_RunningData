@@ -11,6 +11,7 @@ This site built manually using **``dash``**.  Not using a website builder for th
 As this project is a learning environment, upcoming changes:
 * Use browser storage to save data: dcc.Store or tabs to save state and speed transitions after initial loading
 * Add Marin Headlands page after finishing development on Lake Sonoma
+* Retrieve full-resolution GPS data for Lake Sonoma runs.  Strava API only allows 1 activity per GET. Cannot batch retrieve.
 * Experimentation with clientside callbacks.
 * Another interesting angle would be to incorporate **OAuth** authentication to Strava. This would allow users to check out their own data.
 * Data is currently static. Add backend job to update data on daily or weekly basis

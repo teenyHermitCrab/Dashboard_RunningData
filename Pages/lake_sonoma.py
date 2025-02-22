@@ -163,14 +163,13 @@ def draw_scatter_all_LS_runs():
                               html.Div([ dcc.Markdown('* Hover over a run to show on map.\n* Click on a run to show on 3D topographic plot.'),
                                         #html.H5('all run activities')
                                        ],style={'display': 'inline-block', 'vertical-align': 'top'},),
-
                               ]),
                     html.Br(),
                     html.Div([
                     dcc.Loading(dcc.Graph(id='plot_all_lake_sonoma_runs',
                                           figure=px.scatter(df_all_LS_runs,
                                                             x='start_date',
-                                                            # y='distance_miles',
+                                                            #y='distance_miles',
                                                             y='distance',
                                                             # color='total_elevation_gain_miles',
                                                             # size='total_elevation_gain_miles',
@@ -196,8 +195,7 @@ def draw_scatter_all_LS_runs():
                                                                 title_x=0.5,
                                                                 autosize=True,
                                                                 showlegend=False,
-
-                                                                hovermode='closest',  # This enables the crosshair effect
+                                                                hovermode='closest',
 
                                                                 xaxis=dict(
                                                                     rangeselector=dict(
@@ -400,61 +398,6 @@ def display_hover_data(hover_data):
     run_date = datetime.strptime(start_date, '%Y-%m-%d').date()
     mask = (df_all_LS_runs['start_date'] == run_date) & (df_all_LS_runs['distance']==distance)
     summary_points = df_all_LS_runs[mask]['map.summary_polyline'].values[0]
-
-    # lats, lons, = polyline_to_lats_lons(summary_points)
-    # lons_idx = [binary_search_find_closest_idx(xi, x) for x in lons]
-    # lats_idx = [binary_search_find_closest_idx(yi, y) for y in lats]
-    #
-    # lons_adjusted = [xi[x] for x in lons_idx]
-    # lats_adjusted = [yi[y] for y in lats_idx]
-    # elevations = [float(Z[z[0]][z[1]]) for z in zip(lats_idx, lons_idx)]
-    # df_specific_run = pd.DataFrame({'latitude': lats_adjusted, 'longitude': lons_adjusted, 'elevation': elevations})
-
-    # pp(figure)
-
-    # figure_data_surface = figure[0]
-    # figure_data_new_run = go.Scatter3d(x=df_specific_run['longitude'],
-    #                            y=df_specific_run['latitude'],
-    #                            z=df_specific_run['elevation'],
-    #                            mode='lines+markers',
-    #                            name='aasdf',
-    #                            marker=dict(size=3, color='red'))
-
-    # new_figure = go.Figure(go.Surface(x=xi, y=yi, z=Z,
-    #                            surfacecolor=Z_water,
-    #                            opacity=0.7,
-    #                            ),
-    #                 )
-    #
-    # new_figure.update_traces(contours_z=dict(show=False,
-    #                                   usecolormap=False,
-    #                                   highlightcolor="limegreen",
-    #                                   project_z=True
-    #                                   )
-    #                   )
-    # new_figure.update_layout(title=dict(text='Lake Sonoma'),
-    #                   scene=dict(xaxis_title='Longitude',
-    #                              yaxis_title='Latitude',
-    #                              zaxis_title='Elevation (m)',
-    #                              aspectmode='manual',
-    #                              aspectratio=dict(x=1.5, y=1.2, z=0.5),  #
-    #                              ),
-    #                   autosize=True,
-    #                   # scene_camera_eye=dict(x=1.87, y=0.88, z=-0.4),
-    #                   # width=1200,
-    #                   height=900,
-    #                   # margin=dict(l=65, r=50, b=65, t=90)
-    #                   template='plotly_dark',
-    #                   hovermode=False,
-    #                   )
-    # new_figure.add_trace(go.Scatter3d(x=df_specific_run['longitude'],
-    #                            y=df_specific_run['latitude'],
-    #                            z=df_specific_run['elevation'],
-    #                            mode='lines+markers',
-    #                            # name='2024 LS100K',
-    #                            marker=dict(size=3, color='red')))
-    #
-
 
     leaflet_format = polyline_to_dash_leaflet(summary_points)
 

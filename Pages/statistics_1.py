@@ -103,7 +103,7 @@ def draw_categories_scatter():
                                         'select Y axis data:'
                                     ),
                                     html.Div(
-                                        dcc.Dropdown(id='dropdown_scatter_yaxis',
+                                        dbc.Select(id='dropdown_scatter_yaxis',
                                                      options=[{'label': i, 'value': i} for i in categories_yaxis],
                                                      value=categories_yaxis[1]),
                                         #style = {'width': '25%', }

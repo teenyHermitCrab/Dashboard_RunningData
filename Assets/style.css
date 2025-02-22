@@ -184,6 +184,20 @@ body {
   text-align: justify;
   font-weight: bold;
 }
+
+.equivalent-times-text {
+/*
+  font: 800 40px Arial;
+  */
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 2px;
+  /*position: absolute;*/
+  color: white;
+  /*transform: translate(200%, -5%);*/
+}
+
+
+
 .alt-text {
   position: absolute;
   color: white;
