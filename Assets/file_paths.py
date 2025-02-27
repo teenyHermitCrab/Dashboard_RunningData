@@ -1,5 +1,5 @@
 '''
-This file is difference between running locally and PythonAnywhere deployment.
+This file is used to toggle between running locally and PythonAnywhere deployment.
 '''
 
 # TODO: Change this so that environment variable is used to tell where this is running from.

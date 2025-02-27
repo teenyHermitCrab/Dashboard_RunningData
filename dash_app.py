@@ -1,5 +1,4 @@
 import dash
-# import numpy
 from dash import Dash, html, dcc
 import dash_bootstrap_components as dbc
 # import json
@@ -9,7 +8,6 @@ import dash_bootstrap_components as dbc
 from Pages import overview, statistics_1, statistics_2, lake_sonoma, about
 
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates@V1.2.4/dbc.min.css"
-# app = Flask(__name__, instance_relative_config=True)
 app = Dash(__name__,
         # server=app,
         use_pages=True,
@@ -46,27 +44,12 @@ dash.register_page('Pages.about',
     name='About',
     layout=about.layout)
 
-#
-# df_all_runs: pd.DataFrame = pd.read_pickle(fps.page_overview_all_runs_df_path)
-# # overview page
-# with open(fps.page_overview_geojson_fips_path, 'r') as f:
-#     json_counties = json.load(f)
-# fips_to_name = pd.read_pickle(fps.page_overview_fips_to_name_df_pickle_path)
-#
-# # Lake Sonoma page
-# df_all_LS_runs: pd.DataFrame = pd.read_pickle(fps.page_lake_sonoma_df_all_runs_path)
-# topo_pickle_path = fps.page_lake_sonoma_topo_map_path
-# df_topo = pd.read_pickle(topo_pickle_path)
-# ls_run_file = fps.page_lake_sonoma_100K_run_path
-# df_100K_run = pd.read_csv(ls_run_file)
-# df_100K_run['elevation'] = df_100K_run['elevation'] + 3
-# Z:numpy.ndarray = pd.read_pickle(fps.page_lake_sonoma_topo_z_data_path)
-# Z_water:numpy.ndarray = pd.read_pickle(fps.page_lake_sonoma_topo_z_water_data_path)
-#
-
 
 # with app.app_context():
 #     dash_app.layout = dash.page_container
+
+# Need to investigate: will dcc.Store have any value without clientside callbacks?
+
 app.layout = html.Div( [
                         # dcc.Store(id='storage_df_all_runs', data=df_all_runs.to_dict('records')),
                         # dcc.Store(id='storage_json_counties', data = json_counties),

@@ -6,7 +6,7 @@ import dash_bootstrap_components as dbc
     Input('sidebarCollapse', 'n_clicks'),
     State('sidebar', 'className'))
 def toggle_sidebar(btn_click, className):
-    # print(f' toggle button: {btn_click}   {className =}')
+
     if className == 'active':
         return ''
     if className == '':
@@ -26,7 +26,6 @@ def sidebar(active_item=None):
                     html.Div(className="flex-column p-4 nav nav-pills", children=[
                         html.A([
                             html.I(className="fa-solid fa-earth-americas fa-4x mx-2",),
-                            #html.Img(src='https://webstatic.everburstsun.net/dash-molstar-example/nav.png', alt='', width=48, height=48, className='mx-2'),
                             html.Span(" Run Data", className='fs-4'),
                         ], className='d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none', href='/'),
                         html.Br(),
