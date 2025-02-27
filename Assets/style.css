@@ -238,29 +238,26 @@ body {
 
 .rc-slider-handle-active:active {
   border-color: #636EFA;
-
 }
 
-/*
-
-*/
 
 
 
 ._dash-loading {
   margin: auto;
-  color: black;
+  color: white;
   width: 0;
   height: 0;
+  content: 'loading Strava data...';
   text-align: center;
 }
 
 ._dash-loading::after {
   content: '';
   display: inline-block;
-  width: 5rem;
-  height: 5rem;
-  color: black;
+  width: 7rem;
+  height: 7rem;
+  color: white;
   vertical-align: text-bottom;
   tex-align: center;
   border: 1em solid currentColor;
@@ -268,5 +265,5 @@ body {
   border-radius: 50%;
   -webkit-animation: spinner-border 0.75s linear infinite;
   animation: spinner-border 0.75s linear infinite;
-  margin-top: 2rem;
+  margin-top: 3rem;
 }

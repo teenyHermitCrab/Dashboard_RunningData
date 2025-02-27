@@ -1,20 +1,175 @@
 import base64
 from datetime import datetime
 import dash
-from dash import dcc, html, callback, Input, Output, State
+from dash import dcc, html, callback, Input, Output, Patch, State
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
-import dash_loading_spinners
 import pandas as pd
 import os
 import plotly.express as px
+import plotly.graph_objects as go
 from pprint import pprint as pp
 import re
 import Assets.file_paths as fps
-from Pages.data import df_all_names_scrubbed
+from Pages.data import df_all_runs
 from Pages.sidebar import sidebar
 
 # pd.options.mode.chained_assignment = None  # default='warn'
+
+
+def layout():
+    layout_components_scatter = dbc.Row([
+        dbc.Col([
+            draw_scatter_all_runs(),
+        ], xs=12, sm=12, md=6, lg=6, xl=6, className='mt-3 d-flex flex-column' ),
+        dbc.Col([
+            draw_category_select(),
+            draw_line_plot_cumulative_data(),
+        ], xs=12, sm=12, md=6, lg=6, xl=6, className='mt-3 d-flex flex-column' ),
+    ], className='justify-content-center d-flex align-items-stretch')
+
+    layout_cumulative_images = dbc.Row([
+        dbc.Col([
+            draw_images_cumulative_data()
+        ], ),  # xs=12, sm=12, md=12, lg=11, xl=10, className='mt-3'
+    ], className='justify-content-center')
+
+    layout_statistics = [
+        dcc.Store(id='store_stats2_page_load_trigger', data={'loaded': False}),
+        dcc.Store(id='store_stats2_data', data={}),
+
+        sidebar(__name__),
+        html.Div([
+            dbc.Container(layout_components_scatter,  fluid=True,),
+            dbc.Container(layout_cumulative_images, fluid=True),
+        ], className='content'),
+    ]
+
+    return layout_statistics
+
+
+
+
+# Callback to trigger once when the page loads
+@callback(
+    Output('scatter_stats2_all_runs', 'figure'),
+    Output("store_stats2_page_load_trigger", "data"),
+    Output('store_stats2_data', 'data'),
+    Input("store_stats2_page_load_trigger", "data"),
+    State('dropdown_stats2_category_select', 'value'),
+    # State('storage_df_all_runs', 'data', ),
+
+    prevent_initial_call="initial_duplicate"  # Ensures it only runs once after initial render
+)
+def on_page_load(store_data, category_selection):
+    if not store_data.get("loaded"):  # Check if page has already loaded
+        # df_all_runs = pd.DataFrame(all_run_data)
+
+        figure = px.scatter(df_all_runs,
+                            x='start_date',
+                            y='distance_miles',
+                            #y='distance',
+                            color='total_elevation_gain_miles',
+                            size='total_elevation_gain_miles',
+                            # color='total_elevation_gain',
+                            # size='total_elevation_gain',
+                            hover_name='name',
+                            # title='all runs',
+                            color_continuous_scale=px.colors.sequential.Viridis,
+                            template='plotly_dark',
+                            labels={'start_date': '',
+                                    'distance': 'distance (meters)',
+                                    'distance_miles': 'distance (miles)',
+                                    'total_elevation_gain': 'elevation (meters)',
+                                    'total_elevation_gain_miles': 'elevation (miles)'},
+                            hover_data={'start_date': False},
+                            render_mode='auto',
+                            title='all runs',
+                            )
+        figure.update_layout(title_x=0.5,
+                             autosize=True,
+                             dragmode=None,
+                             xaxis=dict(rangeselector=dict(buttons=list([
+                                        dict(count=6,
+                                             label="6m",
+                                             step="month",
+                                             stepmode="backward"),
+                                        # dict(count=1,
+                                        #      label="YTD",
+                                        #      step="year",
+                                        #      stepmode="todate"),
+                                        dict(count=1,
+                                             label="1y",
+                                             step="year",
+                                             stepmode="backward"),
+                                        dict(step="all")
+                                    ]),
+                                                           bgcolor='#333333',
+                                                           ),
+                                        rangeslider=dict(visible=True,
+                                                         bgcolor='#444444',
+                                                         ),
+                                        type="date",
+                                        )
+                            )
+        figure.update_layout(coloraxis_showscale=False)
+
+
+
+        column_name = {'blood': 'volume_blood_liters',
+                       'respiration': 'volume_respiration_liters',
+                       'elevation': 'total_elevation_gain_miles'}
+        units = {'blood': 'liters',
+                 'respiration': 'liters',
+                 'elevation': 'miles'}
+        target_data = column_name[category_selection]
+        df_all_runs.loc[:, 'cumulative'] = df_all_runs[target_data].cumsum()
+
+
+        title, units, cumulative_value_formatted, description, category = '', '', '', '', ''
+        # no need to hunt through the figure, we have the dataFrame.
+        run_count = len(df_all_runs)
+        if run_count > 0:
+            cumulative_value = df_all_runs['cumulative'].iloc[-1]
+        else:
+            cumulative_value = 0
+
+        match category_selection:
+            case 'blood':
+                title = '## Total Blood Volume'
+                units = 'liters'
+                cumulative_value_formatted = f'{cumulative_value:,.0f}'
+                description = fr'estimated cumulative volume of blood pumped by my ticker over **{run_count:,}** runs.'
+                category = 'Blood'
+            case 'respiration':
+                title = '## Total Respiration Volume'
+                units = 'liters'
+                cumulative_value_formatted = f'{cumulative_value:,.0f}'
+                description = fr'estimated cumulative volume of air huffed and puffed over **{run_count:,}** runs.'
+                category = 'Respiration'
+            case 'elevation':
+                title = '## Total Elevation Gain'
+                units = 'miles'
+                cumulative_value_formatted = f'{cumulative_value:,.1f}'
+                description = fr'cumulative elevation gain over **{run_count:,}** runs.'
+                category = 'Elevation'
+            case _:
+                'unknown selection'
+        md_text = f'{title}\n---\n### **{cumulative_value_formatted}** {units}\n{description}'
+
+        this_page_data = {
+            'start_date': df_all_runs.iloc[0]['start_date'],
+            'stop_date': df_all_runs.iloc[-1]['start_date'],
+            'markdown_description': md_text,
+            'category': category,
+            'cumulative_value': cumulative_value,
+            'units': units,
+        }
+
+        return figure, {'loaded':True}, this_page_data
+    return dash.no_update, dash.no_update, dash.no_update  # Prevent unnecessary updates
+
+
 
 
 #region modal plot help
@@ -136,61 +291,8 @@ def draw_scatter_all_runs():
                     html.Br(),
                     html.Div([
                     dcc.Loading(dcc.Graph(id='scatter_stats2_all_runs',
-                                          figure=px.scatter(df_all_names_scrubbed,
-                                                            x='start_date',
-                                                            y='distance_miles',
-                                                            color='total_elevation_gain_miles',
-                                                            size='total_elevation_gain_miles',
-                                                            hover_name='name',
-                                                            color_continuous_scale=px.colors.sequential.Viridis,
-                                                            template='plotly_dark',
-                                                            labels={'start_date':'',
-                                                                    'distance':'distance<br>meters',
-                                                                    'distance_miles':'distance<br>miles',
-                                                                    'total_elevation_gain':'elevation gain<br>meters',
-                                                                    'total_elevation_gain_miles':'elevation gain<br>feet'},
-                                                            hover_data={'start_date':False,
-                                                                        'distance_miles':False,
-                                                                        'total_elevation_gain_miles':False,
-                                                                        'distance (miles) ': [f'{value:,.1f}' for value in df_all_names_scrubbed['distance_miles']],
-                                                                        'elevation gain (feet) ': [f'{value:,.0f}' for value in  df_all_names_scrubbed['total_elevation_gain_miles'] * 5280],
-                                                                        },
-                                                            render_mode='auto',
-                                                            title='date range select'
-                                                            ).update(layout_coloraxis_showscale=False)
-                                                            .update_layout(
-                                                                # title='all runs',
-                                                                title_x=0.5,
-                                                                autosize=True,
-                                                                hovermode='closest',
-                                                                xaxis=dict(
-                                                                    rangeselector=dict(
-                                                                        buttons=list([
-                                                                            dict(count=6,
-                                                                                 label="6m",
-                                                                                 step="month",
-                                                                                 stepmode="backward"),
-                                                                            # dict(count=1,
-                                                                            #      label="YTD",
-                                                                            #      step="year",
-                                                                            #      stepmode="todate"),
-                                                                            dict(count=1,
-                                                                                 label="1y",
-                                                                                 step="year",
-                                                                                 stepmode="backward"),
-                                                                            dict(step="all")
-                                                                        ]),
-                                                                        bgcolor='#333333'
-
-                                                                    ),
-                                                                    rangeslider=dict(
-                                                                        visible=True,
-                                                                        bgcolor='#444444'
-                                                                    ),
-                                                                    type="date",
-                                                                )
-                                                            ),
-                                          # default double-click is really fast, dont show plotly logo
+                                          figure = px.scatter(pd.DataFrame(), title='loading data...', template='plotly_dark'),
+                                          # default double-click is really fast, don't show plotly logo
                                           config={'doubleClickDelay':750, 'displaylogo': False},
                                           ), className='h-100',
                                              type="cube",
@@ -241,16 +343,26 @@ def draw_line_plot_cumulative_data():
     return html.Div([
             dbc.Card(
                 dbc.CardBody([
-                    html.P('Hover cursor along plot line for calculation on that point.', className='d-flex justify-content-center'),
-                    dcc.Loading(dcc.Graph(id="line_plot_stats2_cumulative",
-                                          style={
-                                                 'display': 'none',
-                                                 'height':'23.5rem'},
-                                          ),
-                                type="cube",
-                                delay_show=500,
-                                overlay_style={'visibility': 'visible', 'filter': 'blur(3px)'},
-                                ),
+                    html.Div([
+                        html.P('Click on plot line to update calculation for that point.',
+                               className='d-flex justify-content-center'),
+                                dcc.Loading(dcc.Graph(id="line_plot_stats2_cumulative",
+                                                      style={'display': 'none',
+                                                             'height': '23.5rem'},
+                                                      config={'displayModeBar': False,  # Hide the mode bar
+                                                             }
+                                                      ),
+                                            type="cube",
+                                            delay_show=500,
+                                            overlay_style={'visibility': 'visible', 'filter': 'blur(3px)'},
+                                            ),
+                                ], style={'position': 'relative',
+                                          'width': 'auto',
+                                          'margin': 'auto',
+                                          'padding-bottom': '40px'
+                                          }
+                    ),
+
 
                     # dbc.Row([
                     #     dbc.Col([
@@ -261,13 +373,10 @@ def draw_line_plot_cumulative_data():
         )
     ])
 
-
 def b64_image(image_filename, image_format):
     with open(image_filename, 'rb') as f:
         image = f.read()
     return f'data:image/{image_format};base64,' + base64.b64encode(image).decode('utf-8')
-
-
 
 
 def draw_images_cumulative_data():
@@ -282,7 +391,10 @@ def draw_images_cumulative_data():
                                     dbc.Row([dcc.Markdown(id='markdown_cumulative_description', dangerously_allow_html=True),]),
                                     html.Br(),
                                     html.Br(),
-                                    dbc.Row([dbc.Button('explain estimate', id='btn_stats2_explain_estimate', style={'width':'auto'}),]),
+                                    dbc.Row([dbc.Button('explain estimate',
+                                                        id='btn_stats2_explain_estimate',
+                                                        style={'width':'auto'},
+                                                        className='m-3'),]),
                                 ], xs=12, sm=12, md=5, lg=5, xl=5, className='mt-3'),
 
                                 dbc.Col([
@@ -315,7 +427,9 @@ def draw_images_cumulative_data():
                                                 ], className='mt-3'),
                                     ],),
 
-                                ], xs=12, sm=12, md=7, lg=7, xl=7, className='mt-3'),
+                                ], xs=12, sm=12, md=5, lg=5, xl=5, className='mt-3'),
+
+                                dbc.Col([], xs=12, sm=12, md=2, lg=2, xl=2),
 
                             ], className='mb-4 mt-2'),  # align-items-end
 
@@ -336,15 +450,19 @@ def draw_images_cumulative_data():
 
 
 @callback(Output('line_plot_stats2_cumulative', 'figure', allow_duplicate= True),
-          Output('line_plot_stats2_cumulative', 'style', ),
+          Output('line_plot_stats2_cumulative', 'style', allow_duplicate=True),
           Output('store_stats2_data', 'data', allow_duplicate = True),
+
           Input('scatter_stats2_all_runs', 'relayoutData'),
           State('dropdown_stats2_category_select', 'value'),
           State('scatter_stats2_all_runs', 'figure'),
+          # State('storage_df_all_runs', 'data'),
           config_prevent_initial_callbacks=True,)
 def display_selected_runs_on_cumulative_plot(relay_out_data: dict, dropdown_selection, figure):
-    if not relay_out_data:
-        return dash.no_update
+    # df_all_runs = pd.DataFrame(all_runs_data)
+
+    if not relay_out_data or not figure:
+        raise PreventUpdate
 
     '''
     Yah.. this looks like a mess, but there doesn't seem to be a way to detect mouse-up events. 
@@ -355,7 +473,7 @@ def display_selected_runs_on_cumulative_plot(relay_out_data: dict, dropdown_sele
     The problem with this callback is that it updates frequently while graph is being changed, so there is alot 
     of traffic.  Need to find that mouse up event 
     '''
-
+    initial_page_load = relay_out_data == {'autosize': True}
     range_slider_was_directly_adjusted = 'xaxis.range' in relay_out_data
     range_slider_modified_on_plot_or_zoom_buttons = 'xaxis.range[0]' in relay_out_data and 'xaxis.range[1]' in relay_out_data
     plot_buttons = 'xaxis.autorange' in relay_out_data or 'autosize' in relay_out_data
@@ -364,24 +482,40 @@ def display_selected_runs_on_cumulative_plot(relay_out_data: dict, dropdown_sele
     # print(f'{relay_out_data = }')
 
     if range_slider_was_directly_adjusted:  # this is where slider bars are used to adjust view
+        # print('directly adjusted')
         start_date = datetime.strptime(relay_out_data['xaxis.range'][0], '%Y-%m-%d %H:%M:%S.%f').date()
         stop_date = datetime.strptime(relay_out_data['xaxis.range'][1], '%Y-%m-%d %H:%M:%S.%f').date()
+        # start_date = relay_out_data['xaxis.range'][0]
+        # stop_date = relay_out_data['xaxis.range'][1]
         # msg = f'AA  {relay_out_data = }\n  {start_date = },   {stop_date = },  {type(start_date) = }'
         # print(msg, flush=True)
     elif range_slider_modified_on_plot_or_zoom_buttons:  # this is where the plot itself is dragged: pan or zoom
+        # print('plot or zoom on plot itself')
         start_date = datetime.strptime(relay_out_data['xaxis.range[0]'], '%Y-%m-%d %H:%M:%S.%f').date()
         stop_date = datetime.strptime(relay_out_data['xaxis.range[1]'], '%Y-%m-%d %H:%M:%S.%f').date()
+        # start_date = relay_out_data['xaxis.range[0]']
+        # stop_date = relay_out_data['xaxis.range[1]']
         # msg = f'BB  {relay_out_data = }\n  {start_date = },   {stop_date = },  {type(start_date) = }'
         # print(msg, flush=True)
+    elif initial_page_load:
+        start_date = df_all_runs.iloc[0]['start_date']
+        stop_date = df_all_runs.iloc[-1]['start_date']
     else:  # 'xaxis.autorange' in relay_out_data or 'autosize' in relay_out_data:
+        print('button controls')
         # plot control buttons pressed or axis reset
         start_date = datetime.strptime(figure['layout']['xaxis']['range'][0], '%Y-%m-%d %H:%M:%S.%f').date()
         stop_date = datetime.strptime(figure['layout']['xaxis']['range'][1], '%Y-%m-%d %H:%M:%S.%f').date()
+        # start_date = figure['layout']['xaxis']['range'][0]
+        # stop_date = figure['layout']['xaxis']['range'][1]
         # msg = f'BB  {relay_out_data = }\n  {start_date = },   {stop_date = },  {type(start_date) = }'
         # print(msg, flush=True)
 
-    mask = (df_all_names_scrubbed['start_date'] >= start_date) & (df_all_names_scrubbed['start_date'] <= stop_date)
-    df_date_range = df_all_names_scrubbed[mask]
+    # print(f'{start_date = }  {stop_date = }')
+
+    mask = (df_all_runs['start_date'] >= start_date) & (df_all_runs['start_date'] <= stop_date)
+    df_date_range = df_all_runs[mask]
+
+    # print(len(df_date_range))
 
     column_name = {'blood': 'volume_blood_liters',
                    'respiration': 'volume_respiration_liters',
@@ -392,7 +526,7 @@ def display_selected_runs_on_cumulative_plot(relay_out_data: dict, dropdown_sele
     target_data = column_name[dropdown_selection]
     df_date_range.loc[:, 'cumulative'] = df_date_range[target_data].cumsum()
 
-    fig = px.line(df_date_range,
+    fig_line = px.line(df_date_range,
                   x='start_date',
                   y='cumulative',
                   labels={'total_elevation_gain_miles': 'total elevation gain (miles)',
@@ -404,7 +538,19 @@ def display_selected_runs_on_cumulative_plot(relay_out_data: dict, dropdown_sele
                   hover_data = {'start_date': False,
                                 'cumulative':':,.0f'},  # add comma separator(s), no need to show decimal places
                   )
-    fig.update_layout(hoverdistance=40)
+    fig_line.update_layout(hoverdistance=30,
+                           dragmode=False,
+                           clickmode='event+select',
+                           )
+    fig_line.add_shape(
+        go.layout.Shape(
+            type="line",
+            x0=df_date_range['start_date'].max(), x1=df_date_range['start_date'].max(),
+            y0=df_date_range['cumulative'].min(), y1=df_date_range['cumulative'].max(),
+            line=dict(color="red", width=2, dash="dash")
+        )
+    )
+
 
     title, units, cumulative_value_formatted, description, category = '', '', '', '', ''
     # no need to hunt through the figure, we have the dataFrame.
@@ -437,12 +583,17 @@ def display_selected_runs_on_cumulative_plot(relay_out_data: dict, dropdown_sele
 
     md_text = f'{title}\n---\n### **{cumulative_value_formatted}** {units}\n{description}'
     data = {
+        'start_date': start_date,
+        'stop_date' : stop_date,
         'markdown_description': md_text,
         'category': category,
         'cumulative_value': cumulative_value,
         'units':units,
     }
-    return fig, {'display': 'block', 'height':'23.5rem'}, data
+
+    return fig_line, {'display': 'block', 'height':'23.5rem'}, data
+
+
 
 
 
@@ -450,8 +601,12 @@ def display_selected_runs_on_cumulative_plot(relay_out_data: dict, dropdown_sele
           Output('line_plot_stats2_cumulative','figure', allow_duplicate = True),
           Input('dropdown_stats2_category_select', 'value'),
           State('line_plot_stats2_cumulative', 'figure'),
+          # State('store_stats2_data', 'data'),
+          # State('storage_df_all_runs', 'data'),
           config_prevent_initial_callbacks=True,)
 def translate_cumulative_category_select(dropdown_selection, cumulative_line_plot_figure):
+    # df_all_runs = pd.DataFrame(all_runs_data)
+
     # when selecting a new category, redraw the figure to new data, data range
     ctx = dash.callback_context
     if not ctx.triggered:
@@ -464,10 +619,12 @@ def translate_cumulative_category_select(dropdown_selection, cumulative_line_plo
     # print(triggered_id)
     # pp(cumulative_line_plot_figure)
 
+    # datetime.strptime(relay_out_data['xaxis.range'][0], '%Y-%m-%d %H:%M:%S.%f').date()
+
     start_date = datetime.strptime(cumulative_line_plot_figure['data'][0]['x'][0], '%Y-%m-%d').date()
     stop_date = datetime.strptime(cumulative_line_plot_figure['data'][0]['x'][-1], '%Y-%m-%d').date()
-    mask = (df_all_names_scrubbed['start_date'] >= start_date) & (df_all_names_scrubbed['start_date'] <= stop_date)
-    df_date_range = df_all_names_scrubbed[mask]
+    mask = (df_all_runs['start_date'] >= start_date) & (df_all_runs['start_date'] <= stop_date)
+    df_date_range = df_all_runs[mask]
 
     column_name = {'blood': 'volume_blood_liters',
                    'respiration': 'volume_respiration_liters',
@@ -478,7 +635,8 @@ def translate_cumulative_category_select(dropdown_selection, cumulative_line_plo
     target_data = column_name[dropdown_selection]
 
     df_date_range.loc[:, 'cumulative'] = df_date_range[target_data].cumsum()
-    fig = px.line(df_date_range,
+
+    fig_line = px.line(df_date_range,
                   x='start_date',
                   y='cumulative',
                   labels={'total_elevation_gain_miles': 'total elevation gain (miles)',
@@ -490,6 +648,18 @@ def translate_cumulative_category_select(dropdown_selection, cumulative_line_plo
                   hover_data={'start_date': False,
                               'cumulative': ':,.0f'},  # add comma separator(s), no need to show decimal places
                   )
+    fig_line.update_layout(hoverdistance=30,
+                           dragmode=False,
+                           clickmode='event+select',
+                           )
+    fig_line.add_shape(
+        go.layout.Shape(
+            type="line",
+            x0=df_date_range['start_date'].max(), x1=df_date_range['start_date'].max(),
+            y0=df_date_range['cumulative'].min(), y1=df_date_range['cumulative'].max(),
+            line=dict(color="red", width=2, dash="dash")
+        )
+    )
 
     title, units, cumulative_value_formatted, description, category = '', '', '', '', ''
     run_count, cumulative_value = 0, 0
@@ -528,21 +698,29 @@ def translate_cumulative_category_select(dropdown_selection, cumulative_line_plo
 
     md_text = f'{title}\n---\n### **{cumulative_value_formatted}** {units}\n{description}'
     data = {
+        'start_date': start_date,
+        'stop_date': stop_date,
         'markdown_description': md_text,
-        'category':category,
-        'cumulative_value':cumulative_value,
-        'units':units
+        'category': category,
+        'cumulative_value': cumulative_value,
+        'units': units,
     }
 
-    return data, fig
+    return data, fig_line
 
 
 
 @callback(Output('store_stats2_data', 'data', allow_duplicate = True),
-          Input('line_plot_stats2_cumulative', 'hoverData'),
+          Output('line_plot_stats2_cumulative','figure', allow_duplicate = True),
+          Input('line_plot_stats2_cumulative', 'clickData'),
           State('dropdown_stats2_category_select', 'value'),
+          State('store_stats2_data', 'data'),
+          State('line_plot_stats2_cumulative', 'figure'),
           config_prevent_initial_callbacks=True,)
-def translate_cumulative_hover_data(hover_data, dropdown_category_selection):
+def translate_cumulative_click_data(click_data, dropdown_category_selection, store_stats2_overall_data, line_plot_figure):
+    if not click_data:
+        raise PreventUpdate
+
     ctx = dash.callback_context
     if not ctx.triggered:
         raise PreventUpdate
@@ -555,8 +733,14 @@ def translate_cumulative_hover_data(hover_data, dropdown_category_selection):
     title, units, cumulative_value_formatted, description, category = '', '', '', '', ''
     run_count, cumulative_value = 0, 0
 
-    run_count = hover_data['points'][0]['pointIndex'] + 1
-    cumulative_value = hover_data['points'][0]['y']
+    run_count = click_data['points'][0]['pointIndex'] + 1
+    cumulative_value = click_data['points'][0]['y']
+    click_date = click_data['points'][0]['x']
+
+    max_idx = len(line_plot_figure['data'][0]['x']) - 1
+    max_cumulative_value = line_plot_figure['data'][0]['y']['_inputArray'][str(max_idx)]
+
+
 
     match dropdown_category_selection:
         case 'blood':
@@ -581,14 +765,29 @@ def translate_cumulative_hover_data(hover_data, dropdown_category_selection):
             'unknown selection'
 
     md_text = f'{title}\n---\n### **{cumulative_value_formatted}** {units}\n{description}'
-    data = {
-        'markdown_description': md_text,
-        'category':category,
-        'cumulative_value':cumulative_value,
-        'units':units
-    }
 
-    return data
+
+    new_data = {
+        'markdown_description': md_text,
+        'category': category,
+        'cumulative_value': cumulative_value,
+        'units': units,
+    }
+    store_stats2_overall_data.update({(k,v) for k,v in new_data.items()})
+
+    patch = Patch()
+    # shapes = cumulative_figure['layout']['shapes']
+    patch['layout']['shapes'] = [go.layout.Shape(type="line",
+                                                 x0=click_date,
+                                                 x1=click_date,
+                                                 y0=0,
+                                                 y1=max_cumulative_value,
+                                                 line=dict(color="red", width=2, dash="dash"))
+                                ]
+
+    return store_stats2_overall_data, patch
+
+
 
 
 def get_sorted_pictures(directory_path:str, units: str) -> list[dict]:
@@ -668,8 +867,8 @@ def translate_cumulative_data(data):
     category = data['category']
 
     # pp(data)
-
     file_name = f'stick_figure_{category}.png'
+    file_name = file_name.lower()
     file_path_stick_figure =  os.path.join(fps.page_statistics2_equivalent_objects_directory, file_name)
 
     directory_path = os.path.join(fps.page_statistics2_equivalent_objects_directory, f'Equivalent{category.title()}')
@@ -685,17 +884,18 @@ def translate_cumulative_data(data):
     picture_description = picture_data['description']
     comparison_value = picture_data['value']
 
-    times = cumulative_value / comparison_value
+    times = round((cumulative_value / comparison_value) * 100)
+    equivalence_formatted = f'{times:,} %'
     # TODO: make this a method that only allows mininum decimal places if less than 10
-    if times < 1:
-        equivalence_formatted = f'{times:.2f}'
-    elif times < 10:
-        equivalence_formatted = f'{times:.1f}'
-    else:
-        equivalence_formatted = f'{times:,.0f}'
+    # if times < 0.1:
+    #     equivalence_formatted = f'{times:.2f}'
+    # elif times < 10:
+    #     equivalence_formatted = f'{times:.1f}'
+    # else:
+    #     equivalence_formatted = f'{times:,.0f}'
 
 
-    markdown_text_equivalence = f'### {equivalence_formatted} times\n{picture_description}'
+    markdown_text_equivalence = f'### {equivalence_formatted}\n##### {picture_description}'
 
 
     return (markdown_text,
@@ -705,34 +905,3 @@ def translate_cumulative_data(data):
 
 
 
-
-
-def layout():
-    layout_components_scatter = dbc.Row([
-        dbc.Col([
-            draw_scatter_all_runs(),
-        ], xs=12, sm=12, md=6, lg=6, xl=6, className='mt-3 d-flex flex-column' ),
-        dbc.Col([
-            draw_category_select(),
-            draw_line_plot_cumulative_data(),
-        ], xs=12, sm=12, md=6, lg=6, xl=6, className='mt-3 d-flex flex-column' ),
-    ], className='justify-content-center d-flex align-items-stretch')
-
-    layout_cumulative_images = dbc.Row([
-        dbc.Col([
-            draw_images_cumulative_data()
-        ], ),  # xs=12, sm=12, md=12, lg=11, xl=10, className='mt-3'
-    ], className='justify-content-center')
-
-    layout_statistics = [
-        dcc.Store(id='store_stats2_data'),
-        sidebar(__name__),
-        html.Div([
-            dbc.Container(layout_components_scatter,  fluid=True,),
-            dbc.Container(layout_cumulative_images, fluid=True),
-        ], className='content'),
-
-        html.Div(id='div_dummy'),
-    ]
-
-    return layout_statistics

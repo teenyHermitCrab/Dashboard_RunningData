@@ -8,13 +8,52 @@ import plotly.express as px
 import plotly.graph_objects as go
 import warnings
 import Assets.file_paths as fps
+from Pages.data import df_all_runs
 from Pages.sidebar import sidebar
+
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
+#
+# df_pickle_filepath = fps.page_statistics_runs_df_pickle_path
+# df_all_names_scrubbed = pd.read_pickle(df_pickle_filepath)
 
-df_pickle_filepath = fps.page_statistics_runs_df_pickle_path
-df_all_names_scrubbed = pd.read_pickle(df_pickle_filepath)
+def layout():
+    layout_histo_box = dbc.Row([
+            dbc.Col([
+                draw_histogram_from_yearly_breakdown()
+            ], xs=12, sm=12, md=6, lg=6, xl=6, className='mt-3'),
+            dbc.Col([
+                draw_box_plot_from_yearly_selection()
+            ], xs=12, sm=12, md=6, lg=6, xl=6, className='mt-3'),
+        ], className='mb-4 mt-2 align-items-end')
+
+    layout_cumulative = dbc.Row([
+            dbc.Col([
+                draw_line_plot_cumulative_data()
+            ], ),   #xs=12, sm=12, md=12, lg=11, xl=10, className='mt-3'
+        ], className='justify-content-center')
+
+    layout_scatter_and_heatmap = dbc.Row([
+            dbc.Col([
+                draw_categories_scatter()
+            ], xs=12, sm=12, md=6, lg=6, xl=6, className='mt-3'),
+            dbc.Col([
+                draw_correlation_heatmap()
+            ], xs=12, sm=12, md=6, lg=6, xl=6, className='mt-3'),
+        ], className='mb-4 mt-2 align-items-end')
+
+    layout_statistics = [
+        sidebar(__name__),
+        html.Div([
+            dbc.Container(draw_year_range_select(), fluid=True),
+            dbc.Container(layout_histo_box, fluid=True ),
+            dbc.Container(layout_cumulative, fluid=True),
+            dbc.Container(layout_scatter_and_heatmap, fluid=True)
+        ], className='content')
+    ]
+
+    return layout_statistics
 
 
 def draw_year_range_select():
@@ -27,19 +66,21 @@ def draw_year_range_select():
                              dcc.RangeSlider(id='range_select_years',
                                              min=2015, max=2025, step=1,
                                              marks={i: str(i) for i in range(2015, 2026)},
-                                             value=[2017, 2024],
+                                             value=[2015, 2025],
                                             ),
                              ], xs=12, sm=10, md=8, lg=8, xl=6),
                 ]),
-                html.Br(),
+                # html.Br(),
                 html.Hr(),
-                html.Br(),
+                # html.Br(),
                 dbc.Row([
                     dbc.Col([
                              html.P('select data for histogram, box, and cumulative plots'),
-                             dcc.RadioItems(id='rbtn_data_selection',
-                                            options=[' distance (miles)', ' elevation gain (miles)', ' duration'],
-                                            value=' distance (miles)', ),]),
+                             dbc.Select(id='rbtn_data_selection',
+                                        options=[' distance (miles)', ' elevation gain (miles)', ' duration'],
+                                        value=' distance (miles)',
+                                        style={'width': 'auto'}),
+                            ]),
                 ]),
            ])
         )
@@ -105,7 +146,8 @@ def draw_categories_scatter():
                                     html.Div(
                                         dbc.Select(id='dropdown_scatter_yaxis',
                                                      options=[{'label': i, 'value': i} for i in categories_yaxis],
-                                                     value=categories_yaxis[1]),
+                                                     value=categories_yaxis[1],
+                                                     style={'width': 'auto'}),
                                         #style = {'width': '25%', }
                                         #className="dash-bootstrap"
                                     ),
@@ -143,20 +185,13 @@ def draw_correlation_heatmap():
               Output('box_plot_yearly', 'figure'),
               Output('box_plot_yearly', 'style'),
               Input("range_select_years", 'value'),
-              Input('rbtn_data_selection', 'value'))
-def update_data_range_plots(range_selections, rbtn_selection):
-    '''
+              Input('rbtn_data_selection', 'value'),)
+def update_data_range_plots(range_selections, rbtn_selection,):
+    # df_all_runs = pd.DataFrame(all_runs_data)
 
-    :param range_selections:
-    :type range_selections:
-    :param rbtn_selection:
-    :type rbtn_selection:
-    :return:
-    :rtype:
-    '''
     start_year,stop_year = range_selections[0], range_selections[1]
     # selected_year = range_selection
-    df_selected_years = df_all_names_scrubbed.loc[(df_all_names_scrubbed['year'] >= start_year) & (df_all_names_scrubbed['year'] <= stop_year)]
+    df_selected_years = df_all_runs.loc[(df_all_runs['year'] >= start_year) & (df_all_runs['year'] <= stop_year)]
     # df_selected_years = df_all_names_scrubbed.loc[(df_all_names_scrubbed['year'] == selected_year)]
 
     column_name = {' distance (miles)': 'distance_miles',
@@ -204,8 +239,10 @@ def update_data_range_plots(range_selections, rbtn_selection):
 @callback(Output('line_plot_cumulative', 'figure'),
           Output('line_plot_cumulative', 'style'),
           Input("range_select_years", 'value'),
-          Input('rbtn_data_selection', 'value'))
-def update_cumulative_plot(range_selections, rbtn_selection):
+          Input('rbtn_data_selection', 'value'),)
+def update_cumulative_plot(range_selections, rbtn_selection,):
+    # df_all_runs = pd.DataFrame(all_runs_data)
+
     column_name = {' distance (miles)': 'distance_miles',
                    ' elevation gain (miles)': 'total_elevation_gain_miles',
                    ' duration': 'elapsed_time'}
@@ -213,7 +250,7 @@ def update_cumulative_plot(range_selections, rbtn_selection):
 
     start_year, stop_year = range_selections[0], range_selections[1]
     # selected_year = range_selection
-    df_selected_years = df_all_names_scrubbed.loc[(df_all_names_scrubbed['year'] >= start_year) & (df_all_names_scrubbed['year'] <= stop_year)]
+    df_selected_years = df_all_runs.loc[(df_all_runs['year'] >= start_year) & (df_all_runs['year'] <= stop_year)]
     # df_selected_years = df_all_names_scrubbed.loc[(df_all_names_scrubbed['year'] == selected_year)]
 
     df_selected_years.loc[:,'cumulative'] = df_selected_years[target_data].cumsum()
@@ -242,11 +279,13 @@ def update_cumulative_plot(range_selections, rbtn_selection):
           Input("range_select_years", 'value'),
           )
 def update_scatter_heatmap(y_axis_selection, range_selections):
+    # df_all_runs = pd.DataFrame(all_runs_data)
+
     start_year, stop_year = range_selections[0], range_selections[1]
     # selected_year = range_selection
 
-    df_selected_years = df_all_names_scrubbed.loc[(df_all_names_scrubbed['year'] >= start_year) &
-                                                  (df_all_names_scrubbed['year'] <= stop_year)]
+    df_selected_years = df_all_runs.loc[(df_all_runs['year'] >= start_year) &
+                                        (df_all_runs['year'] <= stop_year)]
 
     fig_scatter = px.scatter(df_selected_years,
                              x='distance_miles',
@@ -311,47 +350,3 @@ def update_scatter_heatmap(y_axis_selection, range_selections):
 
     return fig_scatter, {'display': 'block'}, fig_correlation, {'display': 'block'}
 
-
-
-
-
-
-
-def layout():
-    layout_histo_box = dbc.Row([
-            dbc.Col([
-                draw_histogram_from_yearly_breakdown()
-            ], xs=12, sm=12, md=6, lg=6, xl=6, className='mt-3'),
-            dbc.Col([
-                draw_box_plot_from_yearly_selection()
-            ], xs=12, sm=12, md=6, lg=6, xl=6, className='mt-3'),
-        ], className='mb-4 mt-2 align-items-end')
-
-    layout_cumulative = dbc.Row([
-            dbc.Col([
-                draw_line_plot_cumulative_data()
-            ], ),   #xs=12, sm=12, md=12, lg=11, xl=10, className='mt-3'
-        ], className='justify-content-center')
-
-    layout_scatter_and_heatmap = dbc.Row([
-            dbc.Col([
-                draw_categories_scatter()
-            ], xs=12, sm=12, md=6, lg=6, xl=6, className='mt-3'),
-            dbc.Col([
-                draw_correlation_heatmap()
-            ], xs=12, sm=12, md=6, lg=6, xl=6, className='mt-3'),
-        ], className='mb-4 mt-2 align-items-end')
-
-
-
-    layout_statistics = [
-        sidebar(__name__),
-        html.Div([
-            dbc.Container(draw_year_range_select(), fluid=True),
-            dbc.Container(layout_histo_box, fluid=True ),
-            dbc.Container(layout_cumulative, fluid=True),
-            dbc.Container(layout_scatter_and_heatmap, fluid=True)
-        ], className='content')
-    ]
-
-    return layout_statistics

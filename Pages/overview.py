@@ -4,19 +4,13 @@ from dash import dcc, html, callback, Input, Output, State
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
-import dash_loading_spinners
 import json
 import pandas as pd
 import plotly.express as px
 from pprint import pprint as pp
 import Assets.file_paths as fps
-from Pages.data import df_all_names_scrubbed
+from Pages.data import df_all_runs, json_counties, fips_to_name
 from Pages.sidebar import sidebar
-
-
-
-
-
 
 ##### get my saved, processed data
 # df_all_names_scrubbed = pd.read_pickle(fps.page_overview_all_runs_df_path)
@@ -25,8 +19,8 @@ from Pages.sidebar import sidebar
 #     counties = json.load(response)
 
 # this is used for choropleth county outlines.  Contains outline data for all counties and is needed for `geojson` parameter
-with open(fps.page_overview_geojson_fips_path, 'r') as f:
-    counties = json.load(f)
+# with open(fps.page_overview_geojson_fips_path, 'r') as f:
+#     counties = json.load(f)
 
 
 #########################  no need to do this all the time, just save the data.
@@ -42,7 +36,57 @@ with open(fps.page_overview_geojson_fips_path, 'r') as f:
 #########################
 
 
-fips_to_name =pd.read_pickle(fps.page_overview_fips_to_name_df_pickle_path)
+# fips_to_name =pd.read_pickle(fps.page_overview_fips_to_name_df_pickle_path)
+
+
+
+
+
+def layout():
+    layout_components_scatter = dbc.Row([
+            dbc.Col([
+                draw_scatter_all_runs()
+            ], ),   #xs=12, sm=12, md=12, lg=11, xl=10, className='mt-3'
+        ], className='justify-content-center')
+
+    layout_components_maps = dbc.Row([
+            dbc.Col([
+                draw_total_distance()
+            ], xs=12, sm=12, md=6, lg=6, xl=6, className='mt-3'),
+            dbc.Col([
+                draw_counties()
+            ], xs=12, sm=12, md=6, lg=6, xl=6, className='mt-3'),
+        ], className='mb-4 mt-2')  # align-items-end
+
+    layout_about = [
+        # html.Div([dash_loading_spinners.Pacman(fullscreen=True, id='loading_whole_app')], id='div_initial_loading'),
+        dcc.Store(id='store_overview_page_load_trigger', data={'loaded':False}),
+        sidebar(__name__),
+        html.Div([
+            # layout_components_scatter
+            dbc.Container(layout_components_scatter,  fluid=True,),
+            dbc.Container(layout_components_maps, fluid='md')
+        ], id='div_overview_content', className='content'),
+        # dcc.Store to keep track of whether the quick-start modal should be shown or not
+        dcc.Store(id='store_quick_start', storage_type='session', data=json.dumps({'modal_shown': False})),
+        dbc.Modal(
+            [
+                dbc.ModalHeader(dcc.Markdown("##### How to select data", style={'textAlign':'center'})),
+                dbc.ModalBody(modal_quick_start_guide),
+                dbc.ModalFooter(
+                    dbc.Checklist(options=[{'label': 'Do not show at page open', 'value': 'dont_show'}],
+                                  id='dont-show-checkbox',
+                                  inline=True,
+                                  style={'margin': 'auto'}
+                    )
+                )
+            ],
+            id='welcome-modal',
+            is_open=False,  # Modal is initially closed
+        ),
+    ]
+    return layout_about
+
 
 
 #region modal plot help
@@ -130,56 +174,50 @@ def draw_scatter_all_runs():
                     html.Br(),
                     html.Div([
                     dcc.Loading(dcc.Graph(id='plot_all_runs',
-                                          figure=px.scatter(df_all_names_scrubbed,
-                                                            x='start_date',
-                                                            y='distance_miles',
-                                                            color='total_elevation_gain_miles',
-                                                            size='total_elevation_gain_miles',
-                                                            hover_name='name',
-                                                            #title='all runs',
-                                                            color_continuous_scale=px.colors.sequential.Viridis,
-                                                            template='plotly_dark',
-                                                            labels={'start_date':'',
-                                                                    'distance':'distance (meters)',
-                                                                    'distance_miles':'distance (miles)',
-                                                                    'total_elevation_gain':'elevation (meters)',
-                                                                    'total_elevation_gain_miles':'elevation (miles)'},
-                                                            hover_data={'start_date':False},
-                                                            render_mode='auto',
-                                                            title='all run activities'
-
-                                                            )#.update_layout(title_x=0.5, autosize=True),
-                                                            .update_layout(
-                                                                # title='all runs',
-                                                                title_x=0.5,
-                                                                autosize=True,
-                                                                xaxis=dict(
-                                                                    rangeselector=dict(
-                                                                        buttons=list([
-                                                                            dict(count=6,
-                                                                                 label="6m",
-                                                                                 step="month",
-                                                                                 stepmode="backward"),
-                                                                            # dict(count=1,
-                                                                            #      label="YTD",
-                                                                            #      step="year",
-                                                                            #      stepmode="todate"),
-                                                                            dict(count=1,
-                                                                                 label="1y",
-                                                                                 step="year",
-                                                                                 stepmode="backward"),
-                                                                            dict(step="all")
-                                                                        ]),
-                                                                        bgcolor='#333333'
-
-                                                                    ),
-                                                                    rangeslider=dict(
-                                                                        visible=True,
-                                                                        bgcolor='#444444'
-                                                                    ),
-                                                                    type="date",
-                                                                )
-                                                            ),
+                                          figure = px.scatter(pd.DataFrame(), title='loading data...', template='plotly_dark'),
+                                          # figure=px.scatter(df_all_runs,
+                                          #                   x='start_date',
+                                          #                   y='distance_miles',
+                                          #                   color='total_elevation_gain_miles',
+                                          #                   size='total_elevation_gain_miles',
+                                          #                   hover_name='name',
+                                          #                   # title='all runs',
+                                          #                   color_continuous_scale=px.colors.sequential.Viridis,
+                                          #                   template='plotly_dark',
+                                          #                   labels={'start_date': '',
+                                          #                           'distance': 'distance (meters)',
+                                          #                           'distance_miles': 'distance (miles)',
+                                          #                           'total_elevation_gain': 'elevation (meters)',
+                                          #                           'total_elevation_gain_miles': 'elevation (miles)'},
+                                          #                   hover_data={'start_date': False},
+                                          #                   render_mode='auto',
+                                          #                   title='all run activities'
+                                          #
+                                          #                   ).update_layout(title_x=0.5,
+                                          #                                   autosize=True,
+                                          #                                   xaxis=dict(rangeselector=dict(buttons=list([
+                                          #                                       dict(count=6,
+                                          #                                            label="6m",
+                                          #                                            step="month",
+                                          #                                            stepmode="backward"),
+                                          #                                       # dict(count=1,
+                                          #                                       #      label="YTD",
+                                          #                                       #      step="year",
+                                          #                                       #      stepmode="todate"),
+                                          #                                       dict(count=1,
+                                          #                                            label="1y",
+                                          #                                            step="year",
+                                          #                                            stepmode="backward"),
+                                          #                                       dict(step="all")
+                                          #                                   ]),
+                                          #                                       bgcolor='#333333',
+                                          #                                   ),
+                                          #                                       rangeslider=dict(visible=True,
+                                          #                                                        bgcolor='#444444',
+                                          #                                                        ),
+                                          #                                       type="date",
+                                          #                                   ),
+                                          #                                   ),
                                           # default double-click is really fast, dont show plotly logo
                                           config={'doubleClickDelay':750, 'displaylogo': False},
                                           ),
@@ -215,22 +253,26 @@ def draw_total_distance():
                     dcc.Markdown(id='markdown_overall_runs_plot_selected', dangerously_allow_html=False),
                     html.Br(),
                     html.Div([
-                            dl.Map([
-                                dl.TileLayer(url='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', ),
-                                dl.Marker(position=lake_sonoma,
-                                          children=[dl.Popup(content='Lake Sonoma, CA')]),
-                                dl.Circle(id='distance_radius', center=lake_sonoma, radius=0),
-                                dl.Circle(id='elevation_radius', center=lake_sonoma, radius=0, color='#D67220'),
-                            ],  center=pacific_ocean_near_dateline,
-                                zoom=1,
-                                attributionControl=False,
-                                style={'width':'100%',
-                                       'height':'20rem',
-                                       'zIndex': 1,  # seems like I have to set this z order manually to be a low value or else it rises all the way to top
-                                       # this is color or background on dark tile theme above
-                                       # determined by color picker on screen
-                                       'background':'#262626'}
-                            ),
+                        dcc.Loading([
+                                    dl.Map([
+                                        dl.TileLayer(url='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', ),
+                                        dl.Marker(position=lake_sonoma,
+                                                  children=[dl.Popup(content='Lake Sonoma, CA')]),
+                                        dl.Circle(id='distance_radius', center=lake_sonoma, radius=0),
+                                        dl.Circle(id='elevation_radius', center=lake_sonoma, radius=0, color='#D67220'),
+                                    ],  center=pacific_ocean_near_dateline,
+                                        zoom=1,
+                                        attributionControl=False,
+                                        style={'width':'100%',
+                                               'height':'20rem',
+                                               'zIndex': 1,  # seems like I have to set this z order manually to be a low value or else it rises all the way to top
+                                               # this is color or background on dark tile theme above
+                                               # determined by color picker on screen
+                                               'background':'#262626'}
+                                    ),
+                        ], type="cube",
+                           delay_show=400,
+                           overlay_style={'visibility': 'visible', 'filter': 'blur(3px)'}) ##################
                     ]),
                     dcc.Markdown(['\n<sub>Distortions of circles result from map projection.</sub> '],
                                  style={'textAlign':'center'},
@@ -243,7 +285,7 @@ def draw_total_distance():
 
 
 def draw_counties():
-    fig = px.choropleth(geojson=counties,
+    fig = px.choropleth(geojson=json_counties,
                         scope="usa",
                         template='plotly_dark',
                         title='run counts per county'
@@ -295,16 +337,21 @@ def meters_to_miles(meters: float) -> float:
 
 
 @callback(Output('markdown_overall_runs_plot_selected', 'children'),
-          Output('distance_radius', 'radius'),
-          Output('elevation_radius', 'radius'),
+          Output('distance_radius', 'radius', allow_duplicate=True),
+          Output('elevation_radius', 'radius', allow_duplicate=True),
           Output('store_county_counts', 'data'),
           Input('plot_all_runs', 'relayoutData'),
           State('plot_all_runs', 'figure'),
-          State('plot_all_runs', 'selectedData'))
+          State('plot_all_runs', 'selectedData'),
+          config_prevent_initial_callbacks=True,
+          )
 def describe_selected_runs(relay_out_data: dict, figure, selected_data):
-    if not relay_out_data:
+    if not relay_out_data or not figure:
         return dash.no_update
 
+    # df_all_runs = pd.DataFrame(all_runs_data)
+
+    # county_counts: pd.DataFrame = None
     #print(f'###############\n{selected_data}')
     # regardless of how plot is panned or zoomed, always display selected data if a selection is active
     if selected_data:
@@ -316,12 +363,11 @@ def describe_selected_runs(relay_out_data: dict, figure, selected_data):
 
         point_idxs = [point['pointIndex'] for point in points]
 
-        total_gain_meters = df_all_names_scrubbed.iloc[point_idxs]['total_elevation_gain'].sum()
-        total_distance_meters = df_all_names_scrubbed.iloc[point_idxs]['distance'].sum()
+        total_gain_meters = df_all_runs.iloc[point_idxs]['total_elevation_gain'].sum()
+        total_distance_meters = df_all_runs.iloc[point_idxs]['distance'].sum()
         selection_msg = f'##### runs selected: **{points_count}**\n---\n'
 
-        county_counts = df_all_names_scrubbed['county_geoid'].value_counts()
-
+        county_counts = df_all_runs.iloc[point_idxs]['county_geoid'].value_counts()
     else:
         # when no data is selected, then use the display area for choosing the points
         '''
@@ -333,7 +379,7 @@ def describe_selected_runs(relay_out_data: dict, figure, selected_data):
         The problem with this callback is that it updates frequently while graph is being changed, so there is alot 
         of traffic.  Need to find that mouse up event 
         '''
-
+        initial_page_load = relay_out_data == {'autosize':True}
         range_slider_was_directly_adjusted = 'xaxis.range' in relay_out_data
         range_slider_modified_on_plot_or_zoom_buttons = 'xaxis.range[0]' in relay_out_data and 'xaxis.range[1]' in relay_out_data
         plot_buttons = 'xaxis.autorange' in relay_out_data or 'autosize' in relay_out_data
@@ -344,22 +390,34 @@ def describe_selected_runs(relay_out_data: dict, figure, selected_data):
         if range_slider_was_directly_adjusted:    # this is where slider bars are used to adjust view
             start_date = datetime.strptime(relay_out_data['xaxis.range'][0], '%Y-%m-%d %H:%M:%S.%f').date()
             stop_date = datetime.strptime(relay_out_data['xaxis.range'][1], '%Y-%m-%d %H:%M:%S.%f').date()
+            # start_date = relay_out_data['xaxis.range'][0]
+            # stop_date = relay_out_data['xaxis.range'][1]
+
             #msg = f'AA  {relay_out_data = }\n  {start_date = },   {stop_date = },  {type(start_date) = }'
             # print(msg, flush=True)
         elif range_slider_modified_on_plot_or_zoom_buttons:    # this is where the plot itself is dragged: pan or zoom
             start_date = datetime.strptime(relay_out_data['xaxis.range[0]'], '%Y-%m-%d %H:%M:%S.%f').date()
             stop_date = datetime.strptime(relay_out_data['xaxis.range[1]'], '%Y-%m-%d %H:%M:%S.%f').date()
+            # start_date = relay_out_data['xaxis.range[0]']
+            # stop_date = relay_out_data['xaxis.range[1]']
             msg = f'BB  {relay_out_data = }\n  {start_date = },   {stop_date = },  {type(start_date) = }'
             # print(msg, flush=True)
+        elif initial_page_load:
+            start_date = df_all_runs.iloc[0]['start_date']
+            stop_date = df_all_runs.iloc[-1]['start_date']
         else: # 'xaxis.autorange' in relay_out_data or 'autosize' in relay_out_data:
             # plot control buttons pressed or axis reset
             start_date = datetime.strptime(figure['layout']['xaxis']['range'][0], '%Y-%m-%d %H:%M:%S.%f').date()
             stop_date = datetime.strptime(figure['layout']['xaxis']['range'][1], '%Y-%m-%d %H:%M:%S.%f').date()
+            # start_date = figure['layout']['xaxis']['range'][0]
+            # stop_date = figure['layout']['xaxis']['range'][1]
             msg = f'BB  {relay_out_data = }\n  {start_date = },   {stop_date = },  {type(start_date) = }'
             # print(msg, flush=True)
 
-        mask = (df_all_names_scrubbed['start_date'] >= start_date) & (df_all_names_scrubbed['start_date'] <= stop_date)
-        df_date_range = df_all_names_scrubbed[ mask ]
+        # print(f'{start_date = } {type(start_date)}')
+
+        mask = (df_all_runs['start_date'] >= start_date) & (df_all_runs['start_date'] <= stop_date)
+        df_date_range = df_all_runs[ mask ]
         total_gain_meters = df_date_range['total_elevation_gain'].sum()
         total_distance_meters = df_date_range['distance'].sum()
         selection_msg = f'##### runs selected: **{len(df_date_range)}**\n---\n'
@@ -377,9 +435,8 @@ def describe_selected_runs(relay_out_data: dict, figure, selected_data):
     # store this dataframe of county counts so that update-county-plot button can use it
     county_counts = pd.DataFrame(county_counts)
     county_counts.reset_index(inplace=True)
-    # print(f'{type(county_counts) = }')
-    # print(county_counts)
     return  text, total_distance_meters, total_gain_meters, county_counts.to_dict('records')
+
 
 
 
@@ -388,8 +445,8 @@ def describe_selected_runs(relay_out_data: dict, figure, selected_data):
           State('store_county_counts', 'data'),
           config_prevent_initial_callbacks=True
           )
-def update_county_map(n_clicks: int, counts):
-    county_counts = pd.DataFrame(counts)
+def update_county_map(n_clicks: int, county_counts_data,  ):
+    county_counts = pd.DataFrame(county_counts_data)
     # print(f'inside button callback {type(counts) = }')
 
     # print(county_counts.head())
@@ -398,7 +455,7 @@ def update_county_map(n_clicks: int, counts):
     county_names = [fips_to_name[x] for x in county_counts['county_geoid']]
     county_counts.insert(0, 'county_name', pd.Series(county_names))
     fig = px.choropleth(county_counts,
-                        geojson=counties,
+                        geojson=json_counties,
                         locations='county_geoid',
                         color='count',
                         color_continuous_scale="Plasma",
@@ -539,47 +596,67 @@ def show_modal_on_load(dont_show, store_data):
 
 
 
-def layout():
-    layout_components_scatter = dbc.Row([
-            dbc.Col([
-                draw_scatter_all_runs()
-            ], ),   #xs=12, sm=12, md=12, lg=11, xl=10, className='mt-3'
-        ], className='justify-content-center')
+# Callback to trigger once when the page loads
+@callback(
+    Output('plot_all_runs', 'figure'),
+    Output('distance_radius', 'radius', allow_duplicate=True),
+    Output('elevation_radius', 'radius', allow_duplicate=True),
+    Output("store_overview_page_load_trigger", "data"),
+    Input("store_overview_page_load_trigger", "data"),
+    # State('storage_df_all_runs', 'data'),
+    prevent_initial_call='initial_duplicate'
+    # prevent_initial_call=True  # Ensures it only runs once after initial render
+)
+def on_page_load(page_load_trigger_data):
+    if not page_load_trigger_data.get("loaded"):  # Check if page has already loaded
+        # df_all_runs = pd.DataFrame(all_run_data)
 
-    layout_components_maps = dbc.Row([
-            dbc.Col([
-                draw_total_distance()
-            ], xs=12, sm=12, md=6, lg=6, xl=6, className='mt-3'),
-            dbc.Col([
-                draw_counties()
-            ], xs=12, sm=12, md=6, lg=6, xl=6, className='mt-3'),
-        ], className='mb-4 mt-2')  # align-items-end
+        total_gain_meters = df_all_runs['total_elevation_gain'].sum()
+        total_distance_meters = df_all_runs['distance'].sum()
 
-    layout_about = [
-        # html.Div([dash_loading_spinners.Pacman(fullscreen=True, id='loading_whole_app')], id='div_initial_loading'),
-        sidebar(__name__),
-        html.Div([
-            # layout_components_scatter
-            dbc.Container(layout_components_scatter,  fluid=True,),
-            dbc.Container(layout_components_maps, fluid='md')
-        ], id='div_overview_content', className='content'),
-        # dcc.Store to keep track of whether the quick-start modal should be shown or not
-        dcc.Store(id='store_quick_start', storage_type='session', data=json.dumps({'modal_shown': False})),
-        dbc.Modal(
-            [
-                dbc.ModalHeader(dcc.Markdown("##### How to select data", style={'textAlign':'center'})),
-                dbc.ModalBody(modal_quick_start_guide),
-                dbc.ModalFooter(
-                    dbc.Checklist(options=[{'label': 'Do not show at page open', 'value': 'dont_show'}],
-                                  id='dont-show-checkbox',
-                                  inline=True,
-                                  style={'margin': 'auto'}
-                    )
-                )
-            ],
-            id='welcome-modal',
-            is_open=False,  # Modal is initially closed
-        ),
-    ]
+        figure = px.scatter(df_all_runs,
+                            x='start_date',
+                            y='distance_miles',
+                            color='total_elevation_gain_miles',
+                            size='total_elevation_gain_miles',
+                            hover_name='name',
+                            # title='all runs',
+                            color_continuous_scale=px.colors.sequential.Viridis,
+                            template='plotly_dark',
+                            labels={'start_date': '',
+                                    'distance': 'distance (meters)',
+                                    'distance_miles': 'distance (miles)',
+                                    'total_elevation_gain': 'elevation (meters)',
+                                    'total_elevation_gain_miles': 'elevation (miles)'},
+                            hover_data={'start_date': False},
+                            render_mode='auto',
+                            title='all run activities'
 
-    return layout_about
+                            ).update_layout(title_x=0.5,
+                                            autosize=True,
+                                            xaxis=dict(rangeselector=dict(buttons=list([
+                                                        dict(count=6,
+                                                             label="6m",
+                                                             step="month",
+                                                             stepmode="backward"),
+                                                        # dict(count=1,
+                                                        #      label="YTD",
+                                                        #      step="year",
+                                                        #      stepmode="todate"),
+                                                        dict(count=1,
+                                                             label="1y",
+                                                             step="year",
+                                                             stepmode="backward"),
+                                                        dict(step="all")
+                                                    ]),
+                                                                          bgcolor='#333333',
+                                                                          ),
+                                                       rangeslider=dict(visible=True,
+                                                                        bgcolor='#444444',
+                                                                        ),
+                                                       type="date",
+                                                       )
+                                            )
+        return figure, total_distance_meters, total_gain_meters, {'loaded':True}
+    return dash.no_update, dash.no_update, dash.no_update, dash.no_update  # Prevent unnecessary updates
+
