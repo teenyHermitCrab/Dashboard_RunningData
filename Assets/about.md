@@ -9,13 +9,21 @@ This site built manually using **``dash``**.  Not using a website builder for th
 
 ---
 As this project is a learning environment, upcoming changes:
-* Use browser storage to save data: dcc.Store or tabs to save state and speed transitions after initial loading
+
 * Add Marin Headlands page after finishing development on Lake Sonoma
-* Experimentation with clientside callbacks.
+
+* Add sources for estimate fields.
+
+* Optimize chart response speeds: experimentation with clientside callbacks.
+
 * Another interesting angle would be to incorporate **OAuth** authentication to Strava. This would allow users to check out their own data.
+
 * Data is currently static. Add backend job to update data on daily or weekly basis
+
+* Use browser storage to save data: dcc.Store or tabs to save state and speed transitions after initial loading
+
 * minor issues:
   * change elevation units on Lake Sonoma topo to feet.
   * reduce file sizes:
     * summary dataframe doesn't need to have all the columns, save only what is used in plots
-    * filter to use only every n-th location in individual run files.
+    * filter to use only every n-th location in individual run files.in individual run files.

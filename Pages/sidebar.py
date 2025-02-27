@@ -1,5 +1,17 @@
-from dash import html
+from dash import callback, html, Input, Output, State
 import dash_bootstrap_components as dbc
+
+
+@callback(Output('sidebar', 'className'),  #className
+    Input('sidebarCollapse', 'n_clicks'),
+    State('sidebar', 'className'))
+def toggle_sidebar(btn_click, className):
+    # print(f' toggle button: {btn_click}   {className =}')
+    if className == 'active':
+        return ''
+    if className == '':
+        return 'active'
+
 
 def sidebar(active_item=None):
     nav = html.Nav(id="sidebar", className="active", children=[
@@ -22,7 +34,7 @@ def sidebar(active_item=None):
                         html.Hr(),
                         dbc.NavItem(dbc.NavLink("Overview", href="/", className='text-white', active=True if active_item=='Pages.overview' else False)),
                         dbc.NavItem(dbc.NavLink("Statistics", href="/statistics_1", className='text-white', active=True if active_item=='Pages.statistics_1' else False)),
-                        # dbc.NavItem(dbc.NavLink("Statistics 2", href="/statistics_2", className='text-white', active=True if active_item == 'Pages.statistics_2' else False)),
+                        dbc.NavItem(dbc.NavLink("Fun Statistics 😀", href="/statistics_2", className='text-white', active=True if active_item == 'Pages.statistics_2' else False)),
                         dbc.NavItem(dbc.NavLink("Lake Sonoma", href="/lake_sonoma", className='text-white', active=True if active_item=='Pages.lake_sonoma' else False)),
                         dbc.NavItem(dbc.NavLink("About", href="/about", className='text-white', active=True if active_item=='Pages.about' else False))
                     ])
