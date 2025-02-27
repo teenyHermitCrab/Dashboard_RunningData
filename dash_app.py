@@ -1,19 +1,24 @@
 import dash
-from dash import Dash, html, dcc
+from dash import Dash, html
 import dash_bootstrap_components as dbc
-# import json
-# import pandas as pd
 # from pprint import pprint as pp
 # from Assets import file_paths as fps
 from Pages import overview, statistics_1, statistics_2, lake_sonoma, about
 
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates@V1.2.4/dbc.min.css"
-app = Dash(__name__,
-        # server=app,
-        use_pages=True,
-        assets_folder='Assets',
-        external_stylesheets=[dbc.themes.DARKLY, dbc.icons.FONT_AWESOME, dbc_css],
-    )
+app = Dash( __name__,
+            # server=app,
+            use_pages=True,
+            assets_folder='Assets',
+            external_stylesheets=[dbc.themes.DARKLY, dbc.icons.FONT_AWESOME, dbc_css],
+            meta_tags=[
+                {"name": "description", "content": "An exploration of data visualization using personal Strava data."},
+                {"property": "og:title", "content": "Corks Run on Planet 3!"},
+                {"property": "og:description", "content": "An exploration of data visualization using personal Strava data."},
+                {"property": "og:image", "content": "https://www.corkhorde.com/assets/skaggs_overlook_sm.jpg"},
+                # {"name": "twitter:card", "content": "summary_large_image"}
+            ]
+          )
 server = app.server
 
 
@@ -60,34 +65,6 @@ app.layout = html.Div( [
                         # dcc.Store(id='storage_nparray_lake_sonoma_Z', data=Z.tolist()),
                         # dcc.Store(id='storage_nparray_lake_sonoma_Z_water', data=Z_water.tolist()),
                         dash.page_container ])
-
-
-# Add meta tags to the head of the app
-app.index_string = r'''
-<!DOCTYPE html>
-<html>
-    <head>
-        {%metas%}
-        <title>My Dash App</title>
-        <meta property="og:title" content="Corks on trails!" />
-        <meta property="og:description" content="Explorations of Strava data." />
-        <meta property="og:image" content="C:\Users\CorkHorde\Documents\Projects\StravaRunningData\Assets\skaggs_overlook_sm.jpg" />
-        <meta property="og:url" content="https://www.corkhorde.com" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        {%favicon%}
-        {%css%}
-    </head>
-    <body>
-        {%app_entry%}
-        <footer>
-            {%config%}
-            {%scripts%}
-            {%renderer%}
-        </footer>
-    </body>
-</html>
-'''
-
 
 if __name__ == "__main__":
     app.run_server(debug=True)

@@ -12,16 +12,6 @@ import Assets.file_paths as fps
 from Pages.data import df_all_runs, json_counties, fips_to_name
 from Pages.sidebar import sidebar
 
-##### get my saved, processed data
-# df_all_names_scrubbed = pd.read_pickle(fps.page_overview_all_runs_df_path)
-
-# with urlopen('https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json') as response:
-#     counties = json.load(response)
-
-# this is used for choropleth county outlines.  Contains outline data for all counties and is needed for `geojson` parameter
-# with open(fps.page_overview_geojson_fips_path, 'r') as f:
-#     counties = json.load(f)
-
 
 #########################  no need to do this all the time, just save the data.
 # maybe county names can change
@@ -36,11 +26,6 @@ from Pages.sidebar import sidebar
 #########################
 
 
-# fips_to_name =pd.read_pickle(fps.page_overview_fips_to_name_df_pickle_path)
-
-
-
-
 
 def layout():
     layout_components_scatter = dbc.Row([
@@ -52,11 +37,16 @@ def layout():
     layout_components_maps = dbc.Row([
             dbc.Col([
                 draw_total_distance()
-            ], xs=12, sm=12, md=6, lg=6, xl=6, className='mt-3'),
+            ],
+                # adjust to screen sizes: there are 12 columns available.
+                # for small screens (phones) use all 12 columns per element group. This forces other element group
+                # to render below.  Thus for small screens, you scroll vertically instead of having to scroll in both
+                # directions.
+                xs=12, sm=12, md=6, lg=6, xl=6, className='mt-3'),
             dbc.Col([
                 draw_counties()
             ], xs=12, sm=12, md=6, lg=6, xl=6, className='mt-3'),
-        ], className='mb-4 mt-2')  # align-items-end
+        ], className='mb-4 mt-2')
 
     layout_about = [
         # html.Div([dash_loading_spinners.Pacman(fullscreen=True, id='loading_whole_app')], id='div_initial_loading'),
@@ -483,6 +473,9 @@ def update_county_map(n_clicks: int, county_counts_data,  ):
 
     return fig#, {'display':'block', }
 
+
+# NOTE: If moving these to clientside callbacks, might be able to update county plot on scatter plot move, selection.
+#       But it is too slow for web server side callbacks
 
 # @callback(Output('county_count_plot', 'figure'),
 #           #Output('county_count_plot', 'style'),
