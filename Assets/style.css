@@ -1,118 +1,190 @@
+/* Base styling for the whole document */
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;  /* Set default font-family for text */
 }
 
 /*
 #plot_all_lake_sonoma_runs > div.js-plotly-plot > div > div > svg:nth-child(1) > g.draglayer.cursor-crosshair > g > rect.nsewdrag.drag.cursor-ew-resize
+   Existing comment: Example of a complex selector for debugging purposes.
 */
 
+/*
+   Set crosshair cursor for specific Plotly elements.
+   This block targets SVG elements within Plotly plots with multiple classes.
+*/
 .js-plotly-plot .plotly g.draglayer.cursor-crosshair rect.nsewdrag.drag.cursor-ew-resize {
-    cursor: crosshair;
+    cursor: crosshair;  /* Apply crosshair cursor style */
 }
+
+/* Alternate selector for elements that require crosshair cursor styling */
 .rect.nsewdrag.drag.cursor-ew-resize {
     cursor: crosshair;
 }
+
+/* Another alternate selector for applying a crosshair cursor within Plotly plots */
 .js-plotly-plot .plotly .cursor-ew-resize {
     cursor: crosshair;
 }
 
+/*
+   Styling for content container.
+   Applies padding and responsive margin adjustments based on viewport width.
+*/
 .content {
+  /* For large screens (min-width 1150px), reserve space for the sidebar */
   @media (min-width: 1150px) {
     /* on large screen, no need for sidebar hiding, so this margin-left provides space for sidebar
        to be shown without need for user to press toggle button
-     */
-    margin-left: 270px !important;
+    */
+    margin-left: 270px !important;  /* Force left margin for sidebar display */
   }
-  padding-top: 10px;
-}
-#sidebar {
-  width: 270px;
-  background: #1d1a1a;
-  color: #fff;
-  -webkit-transition: all .3s;
-  -o-transition: all .3s;
-  transition: all .3s;
-  position: fixed;
-  height: 100vh;
-  z-index: 9;
-}
-#sidebar.active {
-  margin-left: -270px;
+  padding-top: 10px;  /* Add top padding for overall content spacing */
 }
 
+/*
+   Sidebar default styling.
+   Sets fixed width, background, and transition effects.
+*/
+#sidebar {
+  width: 270px;                /* Fixed sidebar width */
+  background: #1d1a1a;         /* Dark background color */
+  color: #fff;                 /* White text color */
+  -webkit-transition: all .3s; /* Transition for webkit browsers */
+  -o-transition: all .3s;      /* Transition for Opera */
+  transition: all .3s;         /* Standard transition for all browsers */
+  position: fixed;             /* Fixed position to remain on screen */
+  height: 100vh;               /* Full viewport height */
+  z-index: 9;                  /* Stack above other elements */
+}
+
+/*
+   Sidebar when toggled to 'active' state.
+   Moves the sidebar offscreen.
+*/
+#sidebar.active {
+  margin-left: -270px;  /* Hide sidebar by shifting it left */
+}
+
+/*
+   Adjustments for custom menu within the active sidebar.
+   Slight margin change for custom menu when sidebar is hidden.
+*/
 #sidebar.active .custom-menu {
   margin-right: -50px;
 }
 
+/*
+   Responsive adjustments for smaller screens.
+   Modify sidebar and custom menu margins when viewport width is less than or equal to 1150px.
+*/
 @media(max-width: 1150px) {
   #sidebar {
-      margin-left:-270px;
+      margin-left: -270px;  /* Hide sidebar by default on small screens */
   }
 
   #sidebar.active {
-      margin-left: 0;
+      margin-left: 0;       /* Show sidebar when active on small screens */
   }
 
   #sidebar .custom-menu {
-      margin-right: -60px!important;
-      bottom: 10px!important;
+      margin-right: -60px!important;  /* Adjust right margin for custom menu */
+      bottom: 10px!important;          /* Position custom menu from bottom */
   }
 }
+
+/*
+   For larger screens (min-width 1150px), hide the custom menu.
+   This prevents duplicate controls when sidebar is visible.
+*/
 @media(min-width: 1150px) {
   #sidebar .custom-menu {
       display: none !important;
   }
 }
 
+/*
+   Styling for sidebar navigation links.
+   Applies padding, color, and border for each link.
+*/
 #sidebar .nav-item a.nav-link> {
-  padding: 10px 0;
-  display: block;
-  color: rgba(255,255,255,.6);
-  border-bottom: 1px solid rgba(255,255,255,.1);
+  padding: 10px 0;  /* Vertical padding for links */
+  display: block;   /* Ensure links are block-level elements */
+  color: rgba(255,255,255,.6);  /* Semi-transparent white text */
+  border-bottom: 1px solid rgba(255,255,255,.1);  /* Subtle bottom border for separation */
 }
 
+/*
+   Hover effect for sidebar navigation links that are not active.
+   Changes background and text color on hover.
+*/
 #sidebar .nav-item a.nav-link:hover:not(.active) {
-  background-color: #fff;
-  color: #1d1a1a !important;
+  background-color: #fff;      /* White background on hover */
+  color: #1d1a1a !important;    /* Dark text on hover */
 }
+
+/*
+   Active state styling for sidebar navigation links.
+   Indicates the currently selected link.
+*/
 #sidebar .nav-item a.nav-link.active {
-  background-color: #0076BA;
-  color: #fff;
+  background-color: #0076BA;  /* Blue background for active link */
+  color: #fff;                /* White text for active link */
 }
 
+/*
+   Styling for the custom menu inside the sidebar.
+   Positioned at the bottom right with smooth transitions.
+*/
 #sidebar .custom-menu {
-  display: inline-block;
-  position: absolute;
-  bottom: 20px;
-  right: 0;
-  margin-right: -20px;
-  -webkit-transition: .3s;
-  -o-transition: .3s;
-  transition: .3s;
+  display: inline-block;     /* Allow inline-block behavior */
+  position: absolute;        /* Position relative to the sidebar */
+  bottom: 20px;              /* 20px from the bottom */
+  right: 0;                  /* Align to the right edge */
+  margin-right: -20px;       /* Adjust position with negative margin */
+  -webkit-transition: .3s;   /* Smooth transition for webkit browsers */
+  -o-transition: .3s;        /* Smooth transition for Opera */
+  transition: .3s;           /* Standard smooth transition */
 }
 
+/*
+   Reduce motion for users who prefer reduced animations.
+   Disables transition effects when the user has this preference.
+*/
 @media(prefers-reduced-motion:reduce) {
   #sidebar .custom-menu {
-      -webkit-transition: none;
-      -o-transition: none;
-      transition: none;
+      -webkit-transition: none;  /* Disable transitions for webkit */
+      -o-transition: none;       /* Disable transitions for Opera */
+      transition: none;          /* Disable transitions */
   }
 }
 
+/*
+   Styling for buttons within the custom menu.
+   Sets fixed dimensions and circular shape.
+*/
 #sidebar .custom-menu .btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  width: 40px;         /* Fixed width */
+  height: 40px;        /* Fixed height */
+  border-radius: 50%;  /* Circular button */
 }
 
+/*
+   Styling for primary buttons within the custom menu.
+   Uses a green background and border.
+*/
 #sidebar .custom-menu .btn.btn-primary {
-  background: #0bc675;
-  border-color: #0bc675;
+  background: #0bc675;    /* Green background */
+  border-color: #0bc675;  /* Green border */
 }
+
+/*
+   Responsive styling for primary buttons on very small screens.
+   Positions the button fixed at the bottom.
+*/
 @media only screen and (max-width: 575px) {   /*and (max-width: 575px)  */
   #sidebar .custom-menu .btn.btn-primary {
-    position:fixed;
-    bottom:0;
+    position: fixed;  /* Fixed positioning on small screens */
+    bottom: 0;        /* Stick to the bottom */
     /*
     font-size:14px;
     width:100%;
@@ -122,148 +194,197 @@ body {
   }
 }
 
+/*
+   Hover state for primary buttons in the custom menu.
+   Changes background and border color on hover.
+*/
 #sidebar .custom-menu .btn.btn-primary:hover {
-  background: #0076BA!important;
-  border-color: #0076BA!important;
+  background: #0076BA!important;   /* Blue background on hover */
+  border-color: #0076BA!important;   /* Blue border on hover */
 }
 
 
 /* Custom CSS for the Banner */
 
+/*
+   Container for the banner.
+   Uses flexbox to align child elements and maintains a specific aspect ratio.
+*/
 .banner-container {
-  width: 100%;
-  display: flex;
-  align-items: flex-end;
-  background-color: black;
-  overflow: hidden;
-  aspect-ratio: 6/1;
+  width: 100%;            /* Full width */
+  display: flex;          /* Use flex layout */
+  align-items: flex-end;  /* Align items to the bottom */
+  background-color: black;/* Black background */
+  overflow: hidden;       /* Hide overflow content */
+  aspect-ratio: 6/1;       /* Maintain a 6:1 aspect ratio */
   @media (max-width: 768px) {
-    aspect-ratio: 5/1;
+    aspect-ratio: 5/1;    /* Adjust aspect ratio for smaller screens */
   }
 }
+
+/*
+   Banner image styling.
+   Ensures the image covers its container and applies opacity.
+*/
 .banner-image {
-  width: 100%;
-  height: 100%;
-  opacity: 0.8;
-  object-fit: cover;
+  width: 100%;        /* Full container width */
+  height: 100%;       /* Full container height */
+  opacity: 0.8;       /* Slightly transparent */
+  object-fit: cover;  /* Cover the container while maintaining aspect ratio */
 }
+
+/*
+   Overlay text styling for the banner.
+   Positioned absolutely with responsive translation adjustments.
+*/
 .overlay-text {
-  position: absolute;
-  color: white;
+  position: absolute; /* Overlay the banner image */
+  color: white;       /* White text color */
   @media (max-width: 768px) {
-    transform: translate(5%, -10%);
+    transform: translate(5%, -10%);  /* Adjust text position on small screens */
     /* display: none !important;  */
   }
   @media (min-width: 768px) {
-    transform: translate(5%, -10%);
+    transform: translate(5%, -10%);  /* Same adjustment for medium screens */
     /*
     width: 80%;
     */
   }
   @media (min-width: 992px) {
-    transform: translate(10%, -20%);
+    transform: translate(10%, -20%);  /* Further adjustment for large screens */
     /*
     transform: translate(10%, -10%);
     width: 50%;
     */
   }
   @media (min-width: 1200px) {
-    transform: translate(10%, -20%);
+    transform: translate(10%, -20%);  /* Consistent adjustment for extra-large screens */
     /*
     transform: translate(10%, -13%);
     width: 45%;
     */
   }
   @media (min-width: 1400px) {
-    transform: translate(10%, -20%);
+    transform: translate(10%, -20%);  /* Same for very large screens */
     /*
     transform: translate(60px, -50px);
     width: 34%;
     */
   }
-  text-align: justify;
-  font-weight: bold;
+  text-align: justify;  /* Justify the text */
+  font-weight: bold;    /* Bold text for emphasis */
 }
 
-.equivalent-times-text {
 /*
-  font: 800 40px Arial;
+   Styling for equivalent-times text.
+   Uses text-stroke to create an outlined effect.
+*/
+.equivalent-times-text {
+  /*
+    font: 800 40px Arial;
   */
-  -webkit-text-fill-color: transparent;
-  -webkit-text-stroke: 2px;
+  -webkit-text-fill-color: transparent;  /* Make text fill transparent (Webkit) */
+  -webkit-text-stroke: 2px;              /* Apply a 2px stroke to text (Webkit) */
   /*position: absolute;*/
-  color: white;
+  color: white;       /* Fallback white color */
   /*transform: translate(200%, -5%);*/
 }
 
-
-
+/*
+   Alternative text positioning.
+   Absolutely positions the text at the right side.
+*/
 .alt-text {
-  position: absolute;
-  color: white;
-  right: 20px;
-  text-align: right;
+  position: absolute; /* Absolute positioning */
+  color: white;       /* White text color */
+  right: 20px;        /* 20px from the right edge */
+  text-align: right;  /* Align text to the right */
 }
+
+/*
+   Reference text styling.
+   Uses a gray color and small font size.
+*/
 .ref {
-  color: gray;
-  font-size: small;
-  right: 0;
+  color: gray;        /* Gray text color */
+  font-size: small;   /* Small font size */
+  right: 0;           /* Positioned at right if needed */
 }
 
-
+/*
+   Slider track styling.
+   Sets background color, height, and vertical positioning for the slider track.
+*/
 .rc-slider-track {
-  background-color: #636EFA;
-  height: 10px;
-  transform: translate(0%, -25%);
+  background-color: #636EFA;       /* Purple-blue track color */
+  height: 10px;                    /* Track height */
+  transform: translate(0%, -25%);  /* Vertical adjustment */
 }
 
+/*
+   Styling for active slider dots.
+   Defines border color and style for active dots.
+*/
 .rc-slider-dot-active {
-  border-color: #636EFA;
-  border: solid 2px white;
-
-
+  border-color: #636EFA;           /* Active dot border color */
+  border: solid 2px white;         /* Solid white border with 2px width */
 }
 
+/*
+   Slider handle styling.
+   Sets background, border, and dimensions for the slider handle.
+*/
 .rc-slider-handle {
-  background-color: #636EFA;
-  border-color: white;
-  height:15px;
-  width:15px;
-
+  background-color: #636EFA;  /* Handle background color */
+  border-color: white;        /* Handle border color */
+  height: 15px;               /* Handle height */
+  width: 15px;                /* Handle width */
 }
 
+/*
+   Hover state for slider handle.
+   Changes border color when hovered.
+*/
 .rc-slider-handle:hover {
-  border-color: white;
+  border-color: white;  /* Maintain white border on hover */
 }
 
+/*
+   Active state styling for slider handle when being dragged.
+*/
 .rc-slider-handle-active:active {
-  border-color: #636EFA;
+  border-color: #636EFA;  /* Change border color while active */
 }
 
-
-
-
+/*
+   Styling for the Dash loading element.
+   Centers and sets minimal dimensions, displaying loading text.
+*/
 ._dash-loading {
-  margin: auto;
-  color: white;
-  width: 0;
-  height: 0;
-  content: 'loading Strava data...';
-  text-align: center;
+  margin: auto;                       /* Center horizontally          */
+  color: white;                       /* White text color             */
+  width: 0;                           /* Zero width as a placeholder  */
+  height: 0;                          /* Zero height as a placeholder */
+  content: 'loading Strava data...';  /* Loading text content         */
+  text-align: center;                 /* Center the text              */
 }
 
+/*
+   Pseudo-element for Dash loading spinner.
+   Creates a spinner with border animations.
+*/
 ._dash-loading::after {
-  content: '';
-  display: inline-block;
-  width: 7rem;
-  height: 7rem;
-  color: white;
-  vertical-align: text-bottom;
-  tex-align: center;
-  border: 1em solid currentColor;
-  border-right-color: transparent;
-  border-radius: 50%;
-  -webkit-animation: spinner-border 0.75s linear infinite;
-  animation: spinner-border 0.75s linear infinite;
-  margin-top: 3rem;
+  content: '';                     /* No textual content */
+  display: inline-block;           /* Inline-block for proper sizing */
+  width: 7rem;                     /* Width of spinner */
+  height: 7rem;                    /* Height of spinner */
+  color: white;                    /* White spinner color */
+  vertical-align: text-bottom;     /* Align spinner with text */
+  text-align: center;              /* Center alignment */
+  border: 1em solid currentColor;  /* Border using current text color */
+  border-right-color: transparent; /* Make right border transparent for spinner effect */
+  border-radius: 50%;              /* Circular shape */
+  -webkit-animation: spinner-border 0.75s linear infinite;  /* Webkit spinner animation */
+  animation: spinner-border 0.75s linear infinite;          /* Standard spinner animation */
+  margin-top: 3rem;             /* Top margin to separate spinner from content */
 }

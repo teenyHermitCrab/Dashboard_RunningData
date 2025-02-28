@@ -310,9 +310,12 @@ def update_scatter_heatmap(y_axis_selection, range_selections):
     columns_to_keep = categories_yaxis[:]
     columns_to_keep.extend(['distance_miles',])
     # this chaining warning has been disabled (see import and warning call on line 18)
-    df_selected_years = df_selected_years.loc[:, columns_to_keep]
+    df_selected_years: pd.DataFrame = df_selected_years.loc[:, columns_to_keep]
 
-    df_corr = df_selected_years.corr()
+    df_corr = df_selected_years.corr() # compute pairwise correlation of values
+
+    # There is not a native way (I think seaborn has this?) to have the correlation plot only show lower triangle
+    # and not duplicate plots.
     mask = np.triu(np.ones_like(df_corr, dtype=bool))
     df_mask = df_corr.mask(mask)
 

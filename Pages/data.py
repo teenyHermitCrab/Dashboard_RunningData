@@ -15,6 +15,7 @@ fips_to_name = pd.read_pickle(fps.page_overview_fips_to_name_df_pickle_path)
 df_all_LS_runs: pd.DataFrame = pd.read_pickle(fps.page_lake_sonoma_df_all_runs_path)
 topo_pickle_path = fps.page_lake_sonoma_topo_map_path
 df_topo = pd.read_pickle(topo_pickle_path)
+# not using high-resolution GPS file for now.
 # ls_run_file = fps.page_lake_sonoma_100K_run_path
 # df_100K_run = pd.read_csv(ls_run_file)
 # df_100K_run['elevation'] = df_100K_run['elevation'] + 3

@@ -1,6 +1,7 @@
 import dash
 from dash import callback, dcc, html, Input, Output, Patch, State
 import dash_bootstrap_components as dbc
+from dash.exceptions import PreventUpdate
 import dash_leaflet as dl
 from datetime import datetime
 import pandas as pd
@@ -8,7 +9,6 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 import polyline
-from dash.exceptions import PreventUpdate
 
 import Assets.file_paths as fps
 from Pages.data import df_all_LS_runs, df_topo, Z, Z_water
@@ -19,6 +19,12 @@ from pprint import pp as pp
 
 
 def layout():
+    """
+    dash layout for Lake Sonoma page.
+
+    Returns:
+
+    """
     layout_components_photos = dbc.Row([
         dbc.Col([
             draw_photos()
@@ -62,7 +68,6 @@ def layout():
 
 
 
-# Callback to trigger once when the page loads
 @callback(
     Output('plot_scatter_all_lake_sonoma_runs', 'figure'),
     Output('topo_plot_lake_sonoma', 'figure', allow_duplicate=True),
@@ -76,57 +81,83 @@ def layout():
     # prevent_initial_call=True  # Ensures it only runs once after initial render
 )
 def on_page_load(store_data):
+    """
+    Callback triggered on page load.
+
+    Used to load the scatter and topo plots.
+
+    Args:
+        store_data (dict):
+
+    Returns:
+        figures for scatter and topo plots.  Also returns data field for load trigger, to prevent additional triggering
+
+    """
     if not store_data.get("loaded"):  # Check if page has already loaded
         # df_all_lake_sonoma_runs = pd.DataFrame(all_lake_sonoma_run_data)
 
-        figure = px.scatter(df_all_LS_runs,
-                            x='start_date',
-                            # y='distance_miles',
-                            y='distance',
-                            # color='total_elevation_gain_miles',
-                            # size='total_elevation_gain_miles',
-                            color='total_elevation_gain',
-                            size='total_elevation_gain',
-                            hover_name='name',
-                            # title='all runs',
-                            color_continuous_scale=px.colors.sequential.Viridis,
-                            template='plotly_dark',
-                            labels={'start_date': '',
-                                    'distance': 'distance (meters)',
-                                    'distance_miles': 'distance (miles)',
-                                    'total_elevation_gain': 'elevation (meters)',
-                                    'total_elevation_gain_miles': 'elevation (miles)'},
-                            hover_data={'start_date': False},
-                            render_mode='auto',
-                            title='all Lake Sonoma runs'
+        figure = px.scatter(
+            df_all_LS_runs,
+            x='start_date',
+            # y='distance_miles',
+            y='distance',
+            # color='total_elevation_gain_miles',
+            # size='total_elevation_gain_miles',
+            color='total_elevation_gain',
+            size='total_elevation_gain',
+            hover_name='name',
+            # title='all runs',
+            color_continuous_scale=px.colors.sequential.Viridis,
+            template='plotly_dark',
+            # modify displayed labels
+            labels={
+                'start_date': '',
+                'distance': 'distance (meters)',
+                'distance_miles': 'distance (miles)',
+                'total_elevation_gain': 'elevation (meters)',
+                'total_elevation_gain_miles': 'elevation (miles)'
+            },
+            hover_data={'start_date': False},
+            render_mode='auto',
+            title='all Lake Sonoma runs'
+        )
 
-                            )
-        figure.update_layout(title_x=0.5,
-                             autosize=True,
-                             dragmode=None,
-                             xaxis=dict(rangeselector=dict(buttons=list([
-                                        dict(count=6,
-                                             label="6m",
-                                             step="month",
-                                             stepmode="backward"),
-                                        # dict(count=1,
-                                        #      label="YTD",
-                                        #      step="year",
-                                        #      stepmode="todate"),
-                                        dict(count=1,
-                                             label="1y",
-                                             step="year",
-                                             stepmode="backward"),
-                                        dict(step="all")
-                                    ]),
-                                                           bgcolor='#333333',
-                                                           ),
-                                        rangeslider=dict(visible=True,
-                                                         bgcolor='#444444',
-                                                         ),
-                                        type="date",
-                                        )
-                            )
+        figure.update_layout(
+            title_x=0.5,
+            autosize=True,
+            dragmode=None,
+            xaxis=dict(
+                rangeselector=dict(
+                    buttons=list([
+                        dict(
+                            count=6,
+                            label="6m",
+                            step="month",
+                            stepmode="backward"
+                        ),
+                        # dict(count=1,
+                        #      label="YTD",
+                        #      step="year",
+                        #      stepmode="todate"),
+                        dict(
+                            count=1,
+                            label="1y",
+                            step="year",
+                            stepmode="backward"
+                        ),
+                        dict(step="all")
+                    ]),
+                    bgcolor='#333333'  #  dark dark grey
+                ),
+                rangeslider=dict(
+                    visible=True,
+                    bgcolor='#444444'  # dark grey
+                ),
+                type="date"
+            )
+        )
+
+        # hide color axis - it takes up too much space
         figure.update_layout(coloraxis_showscale=False)
 
         # df_topo = pd.DataFrame(topo_data)
@@ -138,32 +169,46 @@ def on_page_load(store_data):
         # Z = np.array(z_data)
         # Z_water = np.array(z_water_data)
 
-        fig_topo_surface = go.Figure(go.Surface(x=xi, y=yi, z=Z,
-                                                surfacecolor=Z_water,
-                                                opacity=0.7,
-                                                ),
-                                     )
-        fig_topo_surface.update_traces(contours_z=dict(show=False,
-                                                       usecolormap=False,
-                                                       # highlightcolor="limegreen",
-                                                       project_z=False
-                                                       )
-                                       )
-        fig_topo_surface.update_layout(title=dict(text='Lake Sonoma topo test'),
-                                       scene=dict(xaxis_title='Longitude',
-                                                  yaxis_title='Latitude',
-                                                  zaxis_title='Elevation (m)',
-                                                  aspectmode='manual',
-                                                  aspectratio=dict(x=1.5, y=1.2, z=0.5),  #
-                                                  ),
-                                       autosize=True,
-                                       # scene_camera_eye=dict(x=1.87, y=0.88, z=-0.4),
-                                       # width=1200,
-                                       height=900,
-                                       # margin=dict(l=65, r=50, b=65, t=90)
-                                       template='plotly_dark',
-                                       hovermode=False,
-                                       )
+        fig_topo_surface = go.Figure(
+            go.Surface(
+                x=xi,
+                y=yi,
+                z=Z,
+                surfacecolor=Z_water,
+                opacity=0.7
+            )
+        )
+
+        fig_topo_surface.update_traces(
+            contours_z=dict(
+                show=False,  # it gets a bit busy with this activated
+                usecolormap=False,
+                # highlightcolor="limegreen",
+                project_z=False
+            )
+        )
+
+        fig_topo_surface.update_layout(
+            title=dict(text='Lake Sonoma topo test'),
+            scene=dict(
+                xaxis_title='Longitude',
+                yaxis_title='Latitude',
+                zaxis_title='Elevation (m)',
+                aspectmode='manual',
+                # NOTE: this aspect is used to bring map close to actual lat/lon aspect ratio
+                # may not have to do this once we retool the lat/lon elevation mapping
+                aspectratio=dict(x=1.5, y=1.2, z=0.5)
+            ),
+            autosize=True,
+            # scene_camera_eye=dict(x=1.87, y=0.88, z=-0.4),
+            # width=1200,
+            height=900,
+            # margin=dict(l=65, r=50, b=65, t=90)
+            template='plotly_dark',
+            hovermode=False
+        )
+
+        # NOTE: no longer adding the demonstration high resolution trace
         # fig_topo_surface.add_trace(go.Scatter3d(x=df_run['longitude'],
         #                                         y=df_run['latitude'],
         #                                         z=df_run['elevation'],
@@ -171,113 +216,22 @@ def on_page_load(store_data):
         #                                         name='2024 LS100K',
         #                                         marker=dict(size=3, color='red')))
 
+        return figure, fig_topo_surface, {'loaded': True}
 
-        return figure, fig_topo_surface, {'loaded':True}
     return dash.no_update, dash.no_update  # Prevent unnecessary updates
 
 
 
-
-#
-# df_all_LS_runs = pd.read_pickle(fps.page_lake_sonoma_df_all_runs_path)
-#
-# # lake_sonoma =  r'./topos/topo_lake_sonoma_35m.csv'
-# # df = pd.read_csv(lake_sonoma)
-# #
-# # # Lake Sonoma lake level.  Only doing this west of the dam.  The land east of dam is lower than
-# # df.loc[(df['elevation'] < 142) & (df['longitude'] < -123.0092), 'elevation'] = 142
-#
-# # # Merlo Lake  - this bounding box should be tightened up and use less than 145 (not < 0) to get a flat surface
-# # df.loc[(df['elevation'] < 0) & (df['longitude'] > -123.001) & (df['latitude'] < 38.7), 'elevation'] = 145
-# # #df.elevation.nsmallest()
-# # pd.to_pickle(df, r'./topos/df_topo_lake_sonoma_35m.pkl')
-#
-# topo_pickle_path = fps.page_lake_sonoma_topo_map_path
-# df = pd.read_pickle(topo_pickle_path)
-# ls_run_file = fps.page_lake_sonoma_100K_run_path
-#
-# df_run = pd.read_csv(ls_run_file)
-# df_run['elevation'] = df_run['elevation'] + 3
-#
-# x = np.array(df.longitude)
-# y = np.array(df.latitude)
-# z = np.array(df.elevation)
-#
-# xi = np.linspace(x.min(), x.max(), 200)  # longitude
-# yi = np.linspace(y.min(), y.max(), 200)  # latitude
-#
-# # print(yi)
-# # print(len(yi))
-# df_evenly_spaced = pd.DataFrame({'longitude': xi, 'latitude': yi})
-#
-#
-#
-# X,Y = np.meshgrid(xi,yi)
-# # print('meshgrid DONE')
-#
-# Z = griddata((x,y),z,(X,Y), method='cubic')  #cubic, nearest
-# print(type(Z))
-# # print('griddata DONE')
-#
-# # could probably pre-process Z here to manually substitute lake values?
-# Z_water = Z.copy()
-# Z_water[(Z_water > 141.9) & (142.1 > Z_water)] = 300
-#
-# pd.to_pickle(Z, r'./topos/np_griddata_topo_lake_sonoma_35m.pkl')
-# pd.to_pickle(Z_water, r'./topos/np_griddata_surfacecolor_water_topo_lake_sonoma_35m.pkl')
-#
-#
-# Z = pd.read_pickle(fps.page_lake_sonoma_topo_z_data_path)
-# Z_water = pd.read_pickle(fps.page_lake_sonoma_topo_z_water_data_path)
-#
-# fig_topo_surface = go.Figure(go.Surface(x=xi,y=yi,z=Z,
-#                                        surfacecolor=Z_water,
-#                                        opacity=0.7,
-#                                        ),
-#                             )
-# fig_topo_surface.update_traces(contours_z=dict(show=False,
-#                                                usecolormap=False,
-#                                                # highlightcolor="limegreen",
-#                                                project_z=False
-#                                               )
-#                                 )
-# fig_topo_surface.update_layout(title=dict(text='Lake Sonoma - 2024 100K (full resolution)'),
-#                                scene = dict(xaxis_title='Longitude',
-#                                             yaxis_title='Latitude',
-#                                             zaxis_title='Elevation (m)',
-#                                             aspectmode = 'manual',
-#                                             aspectratio = dict(x=1.5, y=1.2, z=0.5),   #
-#                                             ),
-#                                autosize=True,
-#                                #scene_camera_eye=dict(x=1.87, y=0.88, z=-0.4),
-#                                #width=1200,
-#                                height=900,
-#                                #margin=dict(l=65, r=50, b=65, t=90)
-#                                template='plotly_dark',
-#                                hovermode=False,
-#                               )
-# fig_topo_surface.add_trace(go.Scatter3d(x=df_run['longitude'],
-#                                         y=df_run['latitude'],
-#                                         z=df_run['elevation'],
-#                                         mode='lines+markers',
-#                                         name='2024 LS100K',
-#                                         marker=dict(size=3, color='red')))
-
-
-
 def draw_photos():
-    '''
+    """
+        Provide layout for photo carousel and map button.
 
-    :return:
-    :rtype:
-    '''
+    Returns:
+        html.Div
+    """
 
-    # TODO: move this to markdown file.  Could store in pages folder and access by dictionary?
-    markdown_text = '''
-    If you are not familiar with this area: 
-    '''
-
-    google_link = r'https://www.google.com/maps/@38.740792,-123.0507687,13z/data=!5m1!1e4?entry=ttu&g_ep=EgoyMDI1MDIwNS4xIKXMDSoASAFQAw%3D%3D'
+    # open map centered on Lake Sonoma
+    map_link = r'https://www.openstreetmap.org/#map=13/38.72917/-123.06061&layers=C'
 
     return html.Div([
         dbc.Card(
@@ -302,10 +256,8 @@ def draw_photos():
                 fullscreen=False,
                 overlay_style={'visibility': 'visible', 'filter': 'blur(3px)'}),
                 html.Br(),
-                # html.Hr(),
-
-                # dcc.Markdown([markdown_text]),
-                html.A([dbc.Button('open GoogleMaps\nLake Sonoma', )], href=google_link, target='_blank',
+                html.A([dbc.Button('open Lake Sonoma area in OpenStreetMap', )], href=map_link, target='_blank',
+                       # Bootstrap classes: left and right margins (spacing 10)
                        className='ml-10 mr-10'),
             ])
         )
@@ -313,100 +265,63 @@ def draw_photos():
 
 
 def draw_scatter_all_LS_runs():
-    return html.Div([
+    return html.Div(
+        [
             dbc.Card(
-                dbc.CardBody([
-                    html.Div([
-                              html.Div([ dcc.Markdown('* Hover over a run to show on map.\n* Click on a run to show on 3D topographic plot.'),
-                                        #html.H5('all run activities')
-                                       ],style={'display': 'inline-block', 'vertical-align': 'top'},),
-                              ]),
-                    html.Br(),
-                    html.Div([
-                    dcc.Loading(dcc.Graph(id='plot_scatter_all_lake_sonoma_runs',
-                                          figure = px.scatter(pd.DataFrame({'x': np.sin(np.linspace(0, 2 * np.pi, 100)) + 2}), template='plotly_dark', title='loading data...',),
-
-                                          # figure=px.scatter(df_all_LS_runs,
-                                          #                   x='start_date',
-                                          #                   #y='distance_miles',
-                                          #                   y='distance',
-                                          #                   # color='total_elevation_gain_miles',
-                                          #                   # size='total_elevation_gain_miles',
-                                          #                   color='total_elevation_gain',
-                                          #                   size='total_elevation_gain',
-                                          #                   hover_name='name',
-                                          #                   #title='all runs',
-                                          #                   color_continuous_scale=px.colors.sequential.Viridis,
-                                          #                   template='plotly_dark',
-                                          #                   labels={'start_date':'',
-                                          #                           'distance':'distance (meters)',
-                                          #                           'distance_miles':'distance (miles)',
-                                          #                           'total_elevation_gain':'elevation (meters)',
-                                          #                           'total_elevation_gain_miles':'elevation (miles)'},
-                                          #                   hover_data={'start_date':False},
-                                          #                   render_mode='auto',
-                                          #                   title='all Lake Sonoma run activities'
-                                          #
-                                          #                   )#.update_layout(title_x=0.5, autosize=True),
-                                          #                   .update(layout_coloraxis_showscale=False)
-                                          #                   .update_layout(
-                                          #                       # title='all runs',
-                                          #                       title_x=0.5,
-                                          #                       autosize=True,
-                                          #                       showlegend=False,
-                                          #                       hovermode='closest',
-                                          #
-                                          #                       xaxis=dict(
-                                          #                           rangeselector=dict(
-                                          #                               buttons=list([
-                                          #                                   dict(count=6,
-                                          #                                        label="6m",
-                                          #                                        step="month",
-                                          #                                        stepmode="backward"),
-                                          #                                   # dict(count=1,
-                                          #                                   #      label="YTD",
-                                          #                                   #      step="year",
-                                          #                                   #      stepmode="todate"),
-                                          #                                   dict(count=1,
-                                          #                                        label="1y",
-                                          #                                        step="year",
-                                          #                                        stepmode="backward"),
-                                          #                                   dict(step="all")
-                                          #                               ]),
-                                          #                               bgcolor='#333333'
-                                          #
-                                          #                           ),
-                                          #                           rangeslider=dict(
-                                          #                               visible=True,
-                                          #                               bgcolor='#444444'
-                                          #                           ),
-                                          #                           type="date",
-                                          #                       )
-                                          #                   ),
-                                          # default double-click is really fast, dont show plotly logo
-                                          config={'doubleClickDelay':750,
-                                                  'displaylogo': False,
-                                                  'scrollZoom':False,
-                                                  'displayModeBar':False,
-                                                  'editable':False},
-
-                                          ),
-                                type="cube",
-                                delay_show=500,
-                                overlay_style={'visibility': 'visible', 'filter': 'blur(3px)'}
+                dbc.CardBody(
+                    [
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        dcc.Markdown(
+                                            '* Hover over a run to show on map.\n* Click on a run to show on 3D topographic plot.'
+                                        ),
+                                    ],
+                                    style={'display': 'inline-block', 'vertical-align': 'top'},
                                 ),
-                    ]),
-                    # dbc.Modal([
-                    #     dbc.ModalHeader(dbc.ModalTitle("plot controls")),
-                    #     dbc.ModalBody([modal_help_run_selection]),
-                    #     # dbc.ModalFooter(dbc.Button('close',
-                    #     #                            id='btn_close_plot_help',
-                    #     #                            className='ms-auto',
-                    #     #                            n_clicks=0))
-                    # ], id='modal_plot_help', is_open=False, ),
-                ], ),
+                            ]
+                        ),
+                        html.Br(),
+                        html.Div(
+                            [
+                                dcc.Loading(
+                                    dcc.Graph(
+                                        id='plot_scatter_all_lake_sonoma_runs',
+                                        # a placeholder plot so we dont get a default white plot
+                                        figure=px.scatter(
+                                            pd.DataFrame(
+                                                {'x': np.sin(np.linspace(0, 2 * np.pi, 100)) + 2}
+                                            ),
+                                            template='plotly_dark',
+                                            title='loading data...'
+                                        ),
+                                        config={
+                                            'doubleClickDelay': 750,
+                                            'displaylogo': False,
+                                            'scrollZoom': False,
+                                            'displayModeBar': False,
+                                            'editable': False
+                                        },
+                                    ),
+                                    type="cube",
+                                    delay_show=500,
+                                    overlay_style={'visibility': 'visible', 'filter': 'blur(3px)'}
+                                ),
+                            ]
+                        ),
+                        # dbc.Modal([
+                        #     dbc.ModalHeader(dbc.ModalTitle("plot controls")),
+                        #     dbc.ModalBody([modal_help_run_selection]),
+                        #     # dbc.ModalFooter(dbc.Button('close',
+                        #     #                            id='btn_close_plot_help',
+                        #     #                            className='ms-auto',
+                        #     #                            n_clicks=0))
+                        # ], id='modal_plot_help', is_open=False, ),
+                    ]
+                )
             )
-        ],
+        ]
     )
 
 
@@ -422,6 +337,10 @@ def draw_lake_sonoma_map():
                     html.Br(),
                     html.Div([
                             dl.Map([
+
+                                # there are many other TileLayers that could be used, most require you get an API key.
+                                # these are some that dont require a key.  Using a combination of 2 layers to get a darker
+                                # terrain effect.
                                 dl.TileLayer(
                                     url='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
                                     # url=
@@ -434,6 +353,7 @@ def draw_lake_sonoma_map():
                                     opacity=0.7,  # Adjust transparency to blend with the dark base map
                                     # attribution="© Wikimedia"
                                 ),
+                                # This element will display summary run plots
                                 dl.Polyline(id='selected_run_lake_sonoma',
                                             positions= [],
                                             weight=4,
@@ -444,18 +364,14 @@ def draw_lake_sonoma_map():
                                 zoom=13,
                                 attributionControl=False,
                                 style={'width':'100%',
-                                       'height':'27rem',
-                                       'zIndex': 1,  # seems like I have to set this z order manually to be a low value or else it rises all the way to top
-                                       # this is color or background on dark tile theme above
-                                       # determined by color picker on screen
-                                       'background':'#262626'}
+                                       'height':'27rem',  # TODO: is this the best way to size?  need to investigate options
+                                       'zIndex': 1,  # seems like I have to set this z order manually to be a low value
+                                       # or else it rises all the way to top.  I think this is a bug/feature of dash leaflet
+
+                                       'background':'#262626',  #this is color or background on dark tile theme above
+                                       }
                             ),
                     ]),
-                    # html.Div([
-                    #     dcc.Markdown(['polyline: '], id='polyline_selected_run'),
-                    #     dcc.Markdown(['hover data:'], id='hover_selected_run'),
-                    #     ]
-                    # ),
                 ],
                 ),
             )
@@ -483,6 +399,8 @@ def draw_topo_lake_sonoma():
                 dbc.Row([
                     dcc.Loading([
                         dcc.Graph(id='topo_plot_lake_sonoma',
+                                  # Using a simple plot with dark template. This keeps the default white plot from
+                                  # briefly showing at page load
                                   figure = px.scatter(pd.DataFrame(), template='plotly_dark', title='loading data...'),
                                   config={'displaylogo': False})
                     ], type='cube',
@@ -499,6 +417,15 @@ def draw_topo_lake_sonoma():
 
 
 def polyline_to_dash_leaflet(encoded_polyline: str) -> list[list[float]]:
+    """
+    Decode map.summary polyline to list of lat,lon for use in dash leaflet
+
+    Args:
+        encoded_polyline (str): from Strava API summary data
+
+    Returns:
+        list where each element is a [latitude, longitude] list
+    """
     # Decode polyline to a list of (lat, lon) tuples
     coordinates = polyline.decode(encoded_polyline)
 
@@ -508,6 +435,14 @@ def polyline_to_dash_leaflet(encoded_polyline: str) -> list[list[float]]:
     return dash_leaflet_polyline
 
 def polyline_to_lats_lons(encoded_polyline: str) -> (list[float], list[float]):
+    """
+
+    Args:
+        encoded_polyline ():
+
+    Returns:
+
+    """
     # Decode polyline to a list of (lat, lon) tuples
     coordinates = polyline.decode(encoded_polyline)
     latitudes, longitudes = [coord[0] for coord in coordinates], [coord[1] for coord in coordinates]
@@ -515,16 +450,25 @@ def polyline_to_lats_lons(encoded_polyline: str) -> (list[float], list[float]):
 
 
 def binary_search_find_closest_idx(nums: list[float], target: float) -> int:
-    ''' return index of nums array closest to target value
-        nums array is sorted
-    '''
+    """ Binary Search - find closest index
+
+        Find index of nums array closest to target value.
+
+    Args:
+        nums (list[float]): this array is expected to be already sorted
+        target (float):
+
+    Returns:
+        integer representing index of closest value to target.
+    """
     l, r = 0, len(nums) - 1
+    # we don't have to use this check, but I find it to be easier to understand the algorithm
     l_prev, r_prev = -99, -99
 
     # <= comparison allows values outside the array (edge case is smaller values) to be tested
     # if you only use <   then you'd have to have a return statement outside while-loop
     while l <= r:
-        # base case: we are now at closest point
+        # base case: we are now at closest point, and now need to find whether left or right is closest
         if l_prev == l and r_prev == r:
             # find whether closer to l or r ptr
             # print('now test which endpoint is closer')
@@ -542,7 +486,7 @@ def binary_search_find_closest_idx(nums: list[float], target: float) -> int:
         if target == candidate:
             return mid
         elif target < candidate:
-            # dont mid + 1 here or on the left ptr.  we want to find closest but cant tell here if
+            # don't mid + 1 here or on the left ptr.  we want to find closest but cant tell here if
             # we are closer to edges or mid.  so keep mid in both cases
             r = mid
         else:
@@ -551,24 +495,33 @@ def binary_search_find_closest_idx(nums: list[float], target: float) -> int:
 
 
 @callback(Output('selected_run_lake_sonoma','positions'),
-
           Input('plot_scatter_all_lake_sonoma_runs', 'hoverData'),
           # State('storage_df_lake_sonoma_all_runs', 'data'),
           config_prevent_initial_callbacks=True)
 def display_hover_data(hover_data):
+    """
+    Show a summary of run on map when hovering over scatter plot data points.
+
+    Args:
+        hover_data (dict):
+
+    Returns:
+
+    """
     # df_all_ls_runs = pd.DataFrame(all_ls_runs_data)
     start_date = hover_data['points'][0]['x']
     distance = hover_data['points'][0]['y']
     run_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+
     mask = (df_all_LS_runs['start_date'] == run_date) & (df_all_LS_runs['distance']==distance)
     summary_points = df_all_LS_runs[mask]['map.summary_polyline'].values[0]
 
     leaflet_format = polyline_to_dash_leaflet(summary_points)
 
-    return leaflet_format  #, new_figure
+    return leaflet_format
 
 
-# Callback to capture click event on scatter plot
+
 @callback(Output('topo_plot_lake_sonoma', 'figure', allow_duplicate=True),
           Input('plot_scatter_all_lake_sonoma_runs', 'clickData'),
           State('topo_plot_lake_sonoma', 'figure'),
@@ -576,10 +529,24 @@ def display_hover_data(hover_data):
           # State('storage_df_topo_lake_sonoma', 'data'),
           # State('storage_nparray_lake_sonoma_Z', 'data'),
           config_prevent_initial_callbacks=True,)
-def display_click_data(click_data, topo_figure):
-    if click_data:
-        # pp(topo_figure)
+def display_click_data(click_data: dict, topo_figure: dict):
+    """
+    Draw run to topo map
 
+    When user clicks on a scatter plot data point, that run is drawn onto topo map.  If a run already present on topo map
+    that run will first be cleared.
+
+    Args:
+        click_data (dict):
+        topo_figure (dict):
+
+    Returns:
+        Surface figure. Actually returns a Patch object to minimize data transfer
+    """
+
+    if click_data:
+        print(type(click_data))
+        print(type(topo_figure))
         # return f"You clicked on: {click_data['points'][0]['x']}, {click_data['points'][0]['y']}"
         # df_all_ls_runs = pd.DataFrame(all_ls_runs_data)
         # df_topo = pd.DataFrame(topo_data)
@@ -595,19 +562,26 @@ def display_click_data(click_data, topo_figure):
         start_date = click_data['points'][0]['x']
         distance = click_data['points'][0]['y']
         run_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        # We are masking on both start data and distance because there can be multiple runs on one day.
         mask = (df_all_LS_runs['start_date'] == run_date) & (df_all_LS_runs['distance'] == distance)
         summary_points = df_all_LS_runs[mask]['map.summary_polyline'].values[0]
 
+        # get latitude, longitude arrays from summary points.  But summary data does not have elevation data, so we are
+        # matching to closest lat/lon in the topo x-axis, y-axis.
+        # NOTE: this will have to be adjusted when we refine the topo surface to not use meshgrid
         lats, lons, = polyline_to_lats_lons(summary_points)
+        # now find the index where that element's value is closest
         lons_idx = [binary_search_find_closest_idx(xi, x) for x in lons]
         lats_idx = [binary_search_find_closest_idx(yi, y) for y in lats]
 
+        # use that closest index to get lat/lons from xi, yi (because this is what the Surface topo is using)
         lons_adjusted = [xi[x] for x in lons_idx]
         lats_adjusted = [yi[y] for y in lats_idx]
+
+        # since we are now using the closest lat/lons on the Surface topo (closest to our run summary), our elevations
+        # that we use from Z will land directly on the surface plot. they will not float above or below.
         elevations = [float(Z[z[0]][z[1]]) for z in zip(lats_idx, lons_idx)]
         df_specific_run = pd.DataFrame({'latitude': lats_adjusted, 'longitude': lons_adjusted, 'elevation': elevations})
-
-        # pp(figure)
 
         new_scatter = go.Scatter3d(x=df_specific_run['longitude'],
                                    y=df_specific_run['latitude'],
@@ -619,14 +593,19 @@ def display_click_data(click_data, topo_figure):
         patch = Patch()
         data = topo_figure.get("data", [])
 
-        # Look for an existing scatter3d trace in the figure's data
+        # We only want to show this one summary on the Surface topo, so need to get rid of previous.
         for i, trace in enumerate(data):
             if trace.get("type") == "scatter3d":
                 # Replace the Scatter3d trace with the new one using the patch syntax
+                # Note: I think there was old patch syntax where the assignment was a string.
+                # e.g., patch[f'['data']{i}']  or similar
                 patch['data'][i] = new_scatter
-                break  # Exit after the first match
+                break  # Exit after the first match, but could make this general and delete all current Scatter3d traces
         else:
+            # if for-loop didn't encounter a break, then where was no Scatter3d already present
+            # Note: this code would leave other non-Scatter3d traces.
             patch['data'] = data + [new_scatter]
+
 
 
         return patch
