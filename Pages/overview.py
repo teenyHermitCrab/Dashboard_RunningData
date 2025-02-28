@@ -38,7 +38,7 @@ def layout():
             dbc.Col([
                 draw_total_distance()
             ],
-                # adjust to screen sizes: there are 12 columns available.
+                # adjust to screen sizes: recall there are 12 columns available.
                 # for small screens (phones) use all 12 columns per element group. This forces other element group
                 # to render below.  Thus for small screens, you scroll vertically instead of having to scroll in both
                 # directions.
@@ -158,7 +158,6 @@ def draw_scatter_all_runs():
                                                    id='btn_open_plot_help', n_clicks=0)
                               ],
                                 className='float-end',
-                                # style={'display': 'inline-block', 'vertical-align': 'top'},
                                 title='click to display plot control help',),
                               ]),
                     html.Br(),
@@ -219,10 +218,6 @@ def draw_scatter_all_runs():
                     dbc.Modal([
                         dbc.ModalHeader(dbc.ModalTitle("plot controls")),
                         dbc.ModalBody([modal_help_run_selection]),
-                        # dbc.ModalFooter(dbc.Button('close',
-                        #                            id='btn_close_plot_help',
-                        #                            className='ms-auto',
-                        #                            n_clicks=0))
                     ], id='modal_plot_help', is_open=False, ),
                 ], ),
             )
@@ -255,14 +250,16 @@ def draw_total_distance():
                                         attributionControl=False,
                                         style={'width':'100%',
                                                'height':'20rem',
-                                               'zIndex': 1,  # seems like I have to set this z order manually to be a low value or else it rises all the way to top
+                                               # seems like I have to set this z order manually to be a low value or
+                                               # else it rises all the way to top. A bug in dash leaflet?
+                                               'zIndex': 1,
                                                # this is color or background on dark tile theme above
                                                # determined by color picker on screen
                                                'background':'#262626'}
                                     ),
                         ], type="cube",
                            delay_show=400,
-                           overlay_style={'visibility': 'visible', 'filter': 'blur(3px)'}) ##################
+                           overlay_style={'visibility': 'visible', 'filter': 'blur(3px)'})
                     ]),
                     dcc.Markdown(['\n<sub>Distortions of circles result from map projection.</sub> '],
                                  style={'textAlign':'center'},
@@ -280,6 +277,7 @@ def draw_counties():
                         template='plotly_dark',
                         title='run counts per county'
                         ).update_layout(title_x=0.5,
+                                        # reposition so that map fits space better - otherwise there is a lot of border
                                         margin={"r": 0,  "l": 0, 'b':15},
                                         # margin={"r": 0, "t": 0, "l": 0, "b": 0},
                                         # This made a background, but the state outlines
@@ -290,24 +288,24 @@ def draw_counties():
             dbc.Card(
                 dbc.CardBody([
                     html.Div([
-                        html.Div([ ], style={'display': 'inline-block', 'vertical-align': 'top'}, ),
+                        html.Div([ ], style={'display': 'inline-block',   # style: displays element as inline-block
+                                                     'vertical-align': 'top'}, ),  # style: aligns content to the top
                         html.Div([
                             dbc.Button([
-                                # html.I(className="fa-regular fa-circle-question me-3 fa-1x"),
                                 'update county map'
-                            ],
-                                id='btn_update_county_map', n_clicks=0)
+                            ], id='btn_update_county_map', n_clicks=0)
                         ],
-                            className='float-start',
-                            # style={'display': 'inline-block', 'vertical-align': 'top'},
+                            className='float-start',   # 'float-start' applies Bootstrap's float utility to position the element to the left
                             title='click to update county map based on current selections', ),
                     ]),
                     html.Br(),
                     dcc.Loading(dcc.Graph(id="county_count_plot",
                                           figure=fig,
-                                          style={'display':'block'},
-                                          # default double-click is really fast, don't' show plotly logo
-                                          config={'doubleClickDelay': 400, 'displaylogo': False},
+                                          style={'display':'block'},  # style: forces the graph to be rendered as a block-level element
+
+                                          config={'doubleClickDelay': 400,  # default double-click tolerance too fast for my preference, so slowing it down a bit
+                                                  'displaylogo': False      #  don't show plotly logo
+                                                  },
                                           ),
                                 type="cube",
                                 #delay_show=500,
@@ -333,16 +331,33 @@ def meters_to_miles(meters: float) -> float:
           Input('plot_all_runs', 'relayoutData'),
           State('plot_all_runs', 'figure'),
           State('plot_all_runs', 'selectedData'),
-          config_prevent_initial_callbacks=True,
-          )
+          config_prevent_initial_callbacks=True,)
 def describe_selected_runs(relay_out_data: dict, figure, selected_data):
+    """
+    Callback triggered when scatter plot is changed - data selection or pan/zoom
+
+    Updates radius description, radius plots, and stores county count to dcc.Store
+    (in case the update-counties-button is pressed)
+
+    Args:
+        relay_out_data (dict):
+        figure (dict):
+        selected_data (dict):
+
+    Returns:
+        text (str): markdown text for equivalent radius plot
+        total_distance_meters (float): used for equivalent-distance circle drawn onto radius plot
+        total_gain_meters (float): used for equivalent-elevation circle drawn onto radius plot
+        county_counts (dict): data to be used if county plot button pressed
+    """
+
+    # TODO: check if this test necessary now that config_prevent_initial_callbacks is set
     if not relay_out_data or not figure:
         return dash.no_update
 
     # df_all_runs = pd.DataFrame(all_runs_data)
-
     # county_counts: pd.DataFrame = None
-    #print(f'###############\n{selected_data}')
+
     # regardless of how plot is panned or zoomed, always display selected data if a selection is active
     if selected_data:
         points = selected_data['points']
@@ -362,13 +377,15 @@ def describe_selected_runs(relay_out_data: dict, figure, selected_data):
         # when no data is selected, then use the display area for choosing the points
         '''
         Yah.. this looks like a mess, but there doesn't seem to be a way to detect mouse-up events. 
-        Maybe there is a javascript way to do this. or a different dash library to use.
-        But until I find that, I have to pull the displayed range off of relayoutData or from figure
-        Hmmm... should probably just do this from figure.
+        Maybe there is a javascript way to do this. or a different dash library to use...?
+        But until I find that, I have to pull the displayed range off of relayoutData 
+        ...or from figure? check out if there is a way to do this from figure
         
         The problem with this callback is that it updates frequently while graph is being changed, so there is alot 
-        of traffic.  Need to find that mouse up event 
+        of traffic.  Need to find that mouse up event or will be stuck with having to use button to update county plot.
         '''
+
+        # by experiment, these are the various ways the plot can be adjusted.
         initial_page_load = relay_out_data == {'autosize':True}
         range_slider_was_directly_adjusted = 'xaxis.range' in relay_out_data
         range_slider_modified_on_plot_or_zoom_buttons = 'xaxis.range[0]' in relay_out_data and 'xaxis.range[1]' in relay_out_data
@@ -378,6 +395,8 @@ def describe_selected_runs(relay_out_data: dict, figure, selected_data):
         # print(f'{relay_out_data = }')
 
         if range_slider_was_directly_adjusted:    # this is where slider bars are used to adjust view
+            # TODO: original DataFrame is storing dates as datetime object.  Maybe I dont need that and just keep them
+            #       as strings.  Switch to strings if it seems we are not taking advantage of datetime capability.
             start_date = datetime.strptime(relay_out_data['xaxis.range'][0], '%Y-%m-%d %H:%M:%S.%f').date()
             stop_date = datetime.strptime(relay_out_data['xaxis.range'][1], '%Y-%m-%d %H:%M:%S.%f').date()
             # start_date = relay_out_data['xaxis.range'][0]
@@ -436,6 +455,21 @@ def describe_selected_runs(relay_out_data: dict, figure, selected_data):
           config_prevent_initial_callbacks=True
           )
 def update_county_map(n_clicks: int, county_counts_data,  ):
+    """
+    County chloropleth map is currently updated by button click.
+
+    Experiment with clientside callback if having this update via scatter plot relayData.  Otherwise, it is too
+    slow for web server to update this.  It will likely work on a local server, but there will be unacceptable delays
+    on web
+
+    Args:
+        n_clicks (int): not used in callback body, this is merely callback trigger
+        county_counts_data (dict): a fairly large file with all US county data
+
+    Returns:
+
+        figure: (dict)  Used for county chloropleth plot.
+    """
     county_counts = pd.DataFrame(county_counts_data)
     # print(f'inside button callback {type(counts) = }')
 
@@ -449,8 +483,9 @@ def update_county_map(n_clicks: int, county_counts_data,  ):
                         locations='county_geoid',
                         color='count',
                         color_continuous_scale="Plasma",
-                        # the range is way too wide to auto-scale colors,
-                        # this low max allows us to interpret the low-count counties
+                        # Since most of my activities are concentrated in one county, the default range
+                        # would be way too wide to auto-scale colors,
+                        # this low max range allows us to interpret the low-count counties
                         range_color=(0, 15),
                         scope='usa',
                         hover_name='county_name',
@@ -537,31 +572,6 @@ def update_county_map(n_clicks: int, county_counts_data,  ):
 
 
 
-
-# @callback(Output('distance_radius', 'radius'),
-#               Output('elevation_radius', 'radius'),
-#               Input('plot_all_runs', 'selectedData'))
-# def update_distance_circle(selected_data: dict):
-#     if selected_data:
-#         points = selected_data['points']
-#         #points_count = len(points)
-#         selection = list(selected_data.keys())
-#         selection.remove('points')
-#         #range_or_lasso = selection[0]
-#
-#         point_indicies = [point['pointIndex'] for point in points]
-#
-#         total_distance_meters = df_all_names_scrubbed.iloc[point_indicies]['distance'].sum()
-#         total_gain_meters = df_all_names_scrubbed.iloc[point_indicies]['total_elevation_gain'].sum()
-#
-#         return total_distance_meters, total_gain_meters
-#     else:
-#         total_distance_meters = df_all_names_scrubbed['distance'].sum()
-#         total_gain_meters = df_all_names_scrubbed['total_elevation_gain'].sum()
-#
-#         return total_distance_meters, total_gain_meters
-
-
 # Callback to open the modal when the page is loaded and handle checkbox state
 
 
@@ -570,9 +580,25 @@ def update_county_map(n_clicks: int, county_counts_data,  ):
     Output('store_quick_start', 'data'),
     Input('dont-show-checkbox', 'value'),
     State('store_quick_start', 'data'),
-    # config_prevent_initial_callbacks=True,
+    # dont set config_prevent_initial_callbacks to True.  We want to take advantage of the initial callback here
 )
 def show_modal_on_load(dont_show, store_data):
+    """
+    Callback triggered on page load.
+
+    Actually triggered by the checkbox element, because we are using
+
+    User 'dont_show' is True, modal is not displayed.
+
+    Args:
+        dont_show (bool): checkbox value
+        store_data (dcc.Store 'data' property):
+
+    Returns:
+        boolean: Sets is_open property of modal
+        dict: updates dcc.Store 'data' property so that mod
+
+    """
     # Parse the stored data from dcc.Store
     store_data = json.loads(store_data)
 
@@ -601,6 +627,24 @@ def show_modal_on_load(dont_show, store_data):
     # prevent_initial_call=True  # Ensures it only runs once after initial render
 )
 def on_page_load(page_load_trigger_data):
+    """
+       Callback triggered on page load.
+
+       Used to load the scatter plot, and radius circles on left summary map.  Will also set data for load trigger so
+       this callback body won't run again.
+
+       Currently, this runs on every page load, refresh.
+
+       Args:
+           page_load_trigger_data (dict):
+
+       Returns:
+           figure (dict) for scatter plot.
+           distance_radius (float)
+           elevation_radius (float)
+           store_overview_page_load_trigger (dict)
+
+       """
     if not page_load_trigger_data.get("loaded"):  # Check if page has already loaded
         # df_all_runs = pd.DataFrame(all_run_data)
 

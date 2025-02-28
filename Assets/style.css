@@ -361,12 +361,12 @@ body {
    Centers and sets minimal dimensions, displaying loading text.
 */
 ._dash-loading {
-  margin: auto;                       /* Center horizontally */
-  color: white;                       /* White text color */
-  width: 0;                           /* Zero width as a placeholder */
+  margin: auto;                       /* Center horizontally          */
+  color: white;                       /* White text color             */
+  width: 0;                           /* Zero width as a placeholder  */
   height: 0;                          /* Zero height as a placeholder */
-  content: 'loading Strava data...';  /* Loading text content */
-  text-align: center;                  /* Center the text */
+  content: 'loading Strava data...';  /* Loading text content         */
+  text-align: center;                 /* Center the text              */
 }
 
 /*

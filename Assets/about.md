@@ -24,6 +24,8 @@ As this project is a learning environment, upcoming changes:
 
 * minor issues:
   * change elevation units on Lake Sonoma topo to feet.
+  * need more examples for respiration equivalents
   * reduce file sizes:
     * summary dataframe doesn't need to have all the columns, save only what is used in plots
     * filter to use only every n-th location in individual run files.in individual run files.
+  

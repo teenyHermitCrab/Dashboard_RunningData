@@ -62,6 +62,22 @@ def layout():
     prevent_initial_call="initial_duplicate"  # Ensures it only runs once after initial render
 )
 def on_page_load(store_data, category_selection):
+    """
+    Callback triggers on page load due to 'store_stats2_page_load_trigger' in layout.
+
+    This callback loads the scatter plot, updates the description markdown text, and constructs data dict which is used
+    by cumulative line plot and equivalent picture display
+
+    Args:
+        store_data (dict): triggered by page load
+        category_selection (str): category selection from dropdown.  On this initial load it will be the default value.
+
+    Returns:
+        figure (dict): scatter plot figure
+        {'loaded':True} (dict): sets the callback trigger data so that callback method won't execute
+        this_page_data (dict): information to be used by equivalent picture display
+
+    """
     if not store_data.get("loaded"):  # Check if page has already loaded
         # df_all_runs = pd.DataFrame(all_run_data)
 
@@ -459,6 +475,22 @@ def draw_images_cumulative_data():
           # State('storage_df_all_runs', 'data'),
           config_prevent_initial_callbacks=True,)
 def display_selected_runs_on_cumulative_plot(relay_out_data: dict, dropdown_selection, figure):
+    """
+    This callback triggered on adjustment of scatter plot.  It will redraw the cumulative line plot and also update data
+    store that is used by equivalent picture display
+
+    Args:
+        relay_out_data (dict): data from scatter plot resize, pan/zoom, or button controls.
+        dropdown_selection (str): current selected category from dropdown
+        figure (dict): current figure of scatter plot.  Used if plot control buttons pressed.  NOTE: may not need this due to load callback. check it out.
+
+    Returns:
+        fig_line (dict): scatter plot figure
+        {'display': 'block', 'height':'23.5rem'} (dict): style for line plot display
+        data (dict): information to be used by equivalent picture display
+    """
+
+
     # df_all_runs = pd.DataFrame(all_runs_data)
 
     if not relay_out_data or not figure:
@@ -605,6 +637,21 @@ def display_selected_runs_on_cumulative_plot(relay_out_data: dict, dropdown_sele
           # State('storage_df_all_runs', 'data'),
           config_prevent_initial_callbacks=True,)
 def translate_cumulative_category_select(dropdown_selection, cumulative_line_plot_figure):
+    """
+    Callback trigger when category select dropdown changes value.
+
+    Will redraw the cumulative line plot to new data category selected
+
+    Args:
+        dropdown_selection (str):  The new category selected.
+        cumulative_line_plot_figure (dict):  Current figure for line plot.  used to extract date range.
+
+    Returns:
+        data (dict): infomation used for equivalent text, picture
+        fig_line (dict): the new cumulative line plot
+
+    """
+
     # df_all_runs = pd.DataFrame(all_runs_data)
 
     # when selecting a new category, redraw the figure to new data, data range
@@ -718,6 +765,21 @@ def translate_cumulative_category_select(dropdown_selection, cumulative_line_plo
           State('line_plot_stats2_cumulative', 'figure'),
           config_prevent_initial_callbacks=True,)
 def translate_cumulative_click_data(click_data, dropdown_category_selection, store_stats2_overall_data, line_plot_figure):
+    """
+    Callback for when user clicks on the cumulative line plot.  This will adjust the equivalence text, picture to that
+    point.  Also puts a vertical red marker on line plot to emphasize where the user clicked.
+
+    Args:
+        click_data (dict):  Contains information of data point that user clicked
+        dropdown_category_selection (str): The current category selection (blood, respiration, elevation, etc)
+        store_stats2_overall_data (dict): Current selection data. info such as units,
+        line_plot_figure (dict): we need the line plot figure so that we can extend the line to top of plot area.
+
+    Returns:
+        store_stats2_overall_data (dict): Update for dcc.Store
+        patch (): Patch for line plot figure.
+
+    """
     if not click_data:
         raise PreventUpdate
 
@@ -737,11 +799,14 @@ def translate_cumulative_click_data(click_data, dropdown_category_selection, sto
     cumulative_value = click_data['points'][0]['y']
     click_date = click_data['points'][0]['x']
 
+    # using the figure dict to determine where draw the top of vertical line.  If we dont have access to the figure,
+    # then we'd be stuck with the click value, so we could only draw the line from x-axis to line.  Which would work in
+    # most cases but would be hard to see at the start of line plot.
     max_idx = len(line_plot_figure['data'][0]['x']) - 1
     max_cumulative_value = line_plot_figure['data'][0]['y']['_inputArray'][str(max_idx)]
 
-
-
+    # TODO: this may be redundant code.  Probably only the cumulative value needs to be done in this callback.
+    #       Since we wouldn't be changing categories here
     match dropdown_category_selection:
         case 'blood':
             title = '## Total Blood Volume'
@@ -773,8 +838,11 @@ def translate_cumulative_click_data(click_data, dropdown_category_selection, sto
         'cumulative_value': cumulative_value,
         'units': units,
     }
+    # update the dictionary, to keep current data
     store_stats2_overall_data.update({(k,v) for k,v in new_data.items()})
 
+    # using Patch so we don't transfer complete line plot figure, there is no need for that.  We only need to update
+    # the vertical line.
     patch = Patch()
     # shapes = cumulative_figure['layout']['shapes']
     patch['layout']['shapes'] = [go.layout.Shape(type="line",
@@ -791,6 +859,19 @@ def translate_cumulative_click_data(click_data, dropdown_category_selection, sto
 
 
 def get_sorted_pictures(directory_path:str, units: str) -> list[dict]:
+    """
+    Gets a list of filename meta data, sorted by equivalent value of picture.
+
+    Equivalent value, units, and description are in filename.  Filenames need to expected format
+
+    Args:
+        directory_path (str): retrieve this from file_paths.py
+        units (str): Current units in files are [LM]  for liters or miles
+
+    Returns:
+        A sorted list of dicts, key is equivalent value (parsed from filename)
+
+    """
     pattern = f'^(?P<VALUE>[0-9.]+)[{units}]_(?P<DESCRIPTION>.+).(png|jpg)'
     file_data = []
 
@@ -862,6 +943,19 @@ def get_closest_index(picture_data, target):
           Input('store_stats2_data', 'data'),
           config_prevent_initial_callbacks=True)
 def translate_cumulative_data(data):
+    """
+    Callback for equivalent text, equivalent picture display.
+
+    Args:
+        data (dict): This dcc.Store is generated from other callbacks (when scatter plot is adjusted or line plot is clicked on)
+
+    Returns:
+        markdown_text (str): markdown text for describing runs and what category is selected
+        b64_image(file_path_stick_figure, 'png')  (str):  picture encoding for stick figure src property
+        b64_image(picture_filepath, picture_extension) (str): picture encoding for equivalence picture src property
+        markdown_text_equivalence (str):  markdown text for description under equivalence picture
+
+    """
     markdown_text = data['markdown_description']
     cumulative_value = data['cumulative_value']
     category = data['category']
@@ -869,21 +963,31 @@ def translate_cumulative_data(data):
     # pp(data)
     file_name = f'stick_figure_{category}.png'
     file_name = file_name.lower()
+    # stick figure is basically a visual match to the category dropdown select
     file_path_stick_figure =  os.path.join(fps.page_statistics2_equivalent_objects_directory, file_name)
 
+    # For the equivalence pictures, there is a separate directory for each category
     directory_path = os.path.join(fps.page_statistics2_equivalent_objects_directory, f'Equivalent{category.title()}')
 
-    pictures = get_sorted_pictures(directory_path, data['units'][0].upper() )
+    # an example file name: 1000L_a_very_big_water_balloon.jpg
+    # so 'liters' translates to 'L'
+    # This works as long as units are starting with different letters, which they are for now...
+    units_letter = data['units'][0].upper()
+    pictures = get_sorted_pictures(directory_path, units_letter )
+
     # pp(pictures)
+    # figure out which equivalence picture is closest to the data we currently have
     target_idx = get_closest_index(pictures, cumulative_value)
     picture_data = pictures[target_idx]
     picture_filename = picture_data['filename']
-
     picture_filepath = os.path.join(directory_path, picture_filename)
+    # TODO: We may not need to do this, do a test on base64 encoding
     picture_extension = os.path.splitext(picture_filepath)[1][1:]
     picture_description = picture_data['description']
     comparison_value = picture_data['value']
 
+    # TODO: decide whether you want to have a percentage symbol or times symbol
+    #       e.g.,   233 %   or   2.33 X   or   2.33 times   which is easier to understand?
     times = round((cumulative_value / comparison_value) * 100)
     equivalence_formatted = f'{times:,} %'
     # TODO: make this a method that only allows mininum decimal places if less than 10
@@ -894,9 +998,7 @@ def translate_cumulative_data(data):
     # else:
     #     equivalence_formatted = f'{times:,.0f}'
 
-
     markdown_text_equivalence = f'### {equivalence_formatted}\n##### {picture_description}'
-
 
     return (markdown_text,
             b64_image(file_path_stick_figure, 'png'),

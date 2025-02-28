@@ -227,13 +227,8 @@ def draw_photos():
         Provide layout for photo carousel and map button.
 
     Returns:
-        html.Div containing layout
+        html.Div
     """
-
-    # TODO: move this to markdown file.  Could store in pages folder and access by dictionary?
-    markdown_text = '''
-    If you are not familiar with this area: 
-    '''
 
     # open map centered on Lake Sonoma
     map_link = r'https://www.openstreetmap.org/#map=13/38.72917/-123.06061&layers=C'
@@ -261,8 +256,7 @@ def draw_photos():
                 fullscreen=False,
                 overlay_style={'visibility': 'visible', 'filter': 'blur(3px)'}),
                 html.Br(),
-                # dcc.Markdown([markdown_text]),
-                html.A([dbc.Button('open OpenStreetMap\nLake Sonoma', )], href=map_link, target='_blank',
+                html.A([dbc.Button('open Lake Sonoma area in OpenStreetMap', )], href=map_link, target='_blank',
                        # Bootstrap classes: left and right margins (spacing 10)
                        className='ml-10 mr-10'),
             ])
@@ -343,6 +337,10 @@ def draw_lake_sonoma_map():
                     html.Br(),
                     html.Div([
                             dl.Map([
+
+                                # there are many other TileLayers that could be used, most require you get an API key.
+                                # these are some that dont require a key.  Using a combination of 2 layers to get a darker
+                                # terrain effect.
                                 dl.TileLayer(
                                     url='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
                                     # url=
@@ -355,6 +353,7 @@ def draw_lake_sonoma_map():
                                     opacity=0.7,  # Adjust transparency to blend with the dark base map
                                     # attribution="© Wikimedia"
                                 ),
+                                # This element will display summary run plots
                                 dl.Polyline(id='selected_run_lake_sonoma',
                                             positions= [],
                                             weight=4,
@@ -365,7 +364,7 @@ def draw_lake_sonoma_map():
                                 zoom=13,
                                 attributionControl=False,
                                 style={'width':'100%',
-                                       'height':'27rem',
+                                       'height':'27rem',  # TODO: is this the best way to size?  need to investigate options
                                        'zIndex': 1,  # seems like I have to set this z order manually to be a low value
                                        # or else it rises all the way to top.  I think this is a bug/feature of dash leaflet
 
@@ -373,11 +372,6 @@ def draw_lake_sonoma_map():
                                        }
                             ),
                     ]),
-                    # html.Div([
-                    #     dcc.Markdown(['polyline: '], id='polyline_selected_run'),
-                    #     dcc.Markdown(['hover data:'], id='hover_selected_run'),
-                    #     ]
-                    # ),
                 ],
                 ),
             )
@@ -405,6 +399,8 @@ def draw_topo_lake_sonoma():
                 dbc.Row([
                     dcc.Loading([
                         dcc.Graph(id='topo_plot_lake_sonoma',
+                                  # Using a simple plot with dark template. This keeps the default white plot from
+                                  # briefly showing at page load
                                   figure = px.scatter(pd.DataFrame(), template='plotly_dark', title='loading data...'),
                                   config={'displaylogo': False})
                     ], type='cube',
@@ -421,6 +417,15 @@ def draw_topo_lake_sonoma():
 
 
 def polyline_to_dash_leaflet(encoded_polyline: str) -> list[list[float]]:
+    """
+    Decode map.summary polyline to list of lat,lon for use in dash leaflet
+
+    Args:
+        encoded_polyline (str): from Strava API summary data
+
+    Returns:
+        list where each element is a [latitude, longitude] list
+    """
     # Decode polyline to a list of (lat, lon) tuples
     coordinates = polyline.decode(encoded_polyline)
 
@@ -430,6 +435,14 @@ def polyline_to_dash_leaflet(encoded_polyline: str) -> list[list[float]]:
     return dash_leaflet_polyline
 
 def polyline_to_lats_lons(encoded_polyline: str) -> (list[float], list[float]):
+    """
+
+    Args:
+        encoded_polyline ():
+
+    Returns:
+
+    """
     # Decode polyline to a list of (lat, lon) tuples
     coordinates = polyline.decode(encoded_polyline)
     latitudes, longitudes = [coord[0] for coord in coordinates], [coord[1] for coord in coordinates]

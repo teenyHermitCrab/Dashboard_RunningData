@@ -10,6 +10,7 @@ app = Dash( __name__,
             # server=app,
             use_pages=True,
             assets_folder='Assets',
+            update_title='loading...',
             external_stylesheets=[dbc.themes.DARKLY, dbc.icons.FONT_AWESOME, dbc_css],
             meta_tags=[
                 {"name": "description", "content": "An exploration of data visualization using personal Strava data."},
@@ -53,7 +54,7 @@ dash.register_page('Pages.about',
 # with app.app_context():
 #     dash_app.layout = dash.page_container
 
-# Need to investigate: will dcc.Store have any value without clientside callbacks?
+# Need to investigate: will dcc.Store have any optimization value without clientside callbacks?
 
 app.layout = html.Div( [
                         # dcc.Store(id='storage_df_all_runs', data=df_all_runs.to_dict('records')),
