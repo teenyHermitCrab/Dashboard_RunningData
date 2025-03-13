@@ -1,5 +1,9 @@
 #### code is a bit of a mess right now - bunch of different experiments jammed together.  clean up time!
 
+find project here
+
+https://www.corkhorde.com
+
 
 This project is an ongoing sandbox to learn data visualization techniques. Primarily using python libraries **`plotly`** and **`dash`**.
 
